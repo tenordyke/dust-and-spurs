@@ -1,0 +1,7 @@
+# Dust & Spurs — Netlify configuration
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
