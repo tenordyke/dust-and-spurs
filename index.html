@@ -144,12 +144,15 @@
 
   /* PRINTS */
   .prints{background:var(--bone-2);}
-  .prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(20px,2.6vw,32px);margin-bottom:52px;}
-  @media(max-width:760px){.prod-grid{grid-template-columns:1fr;}}
-  .prod{border-top:1px solid var(--line);padding-top:22px;}
+  .prod-grid{display:flex;flex-direction:column;margin-bottom:8px;}
+  .prod{display:grid;grid-template-columns:minmax(0,1.22fr) minmax(220px,.78fr);gap:clamp(20px,3.4vw,48px);align-items:center;border-top:1px solid var(--line);padding:clamp(28px,3.4vw,42px) 0;}
+  .prod-mock{margin:0;min-width:0;background:var(--dust-lt);padding:clamp(10px,1.2vw,16px);border:1px solid #0000000d;box-shadow:var(--shadow);transition:transform .4s,box-shadow .4s;}
+  .prod:hover .prod-mock{transform:translateY(-4px);box-shadow:0 34px 60px -34px rgba(40,32,25,.6);}
+  .prod-mock img{width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;}
   .prod .idx{font-family:'Space Mono';font-size:.62rem;letter-spacing:.2em;color:var(--clay);}
-  .prod h3{font-size:1.3rem;margin:12px 0 10px;}
-  .prod p{color:var(--ink-mut);font-size:.92rem;margin:0;}
+  .prod h3{font-size:clamp(1.45rem,2.2vw,1.85rem);margin:12px 0 10px;}
+  .prod p{color:var(--ink-mut);font-size:.96rem;margin:0;max-width:36ch;}
+  @media(max-width:760px){.prod{grid-template-columns:1fr;gap:16px;align-items:start;}}
   .sizes-strip{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 40px;}
   .sizes-strip .sz{font-family:'Space Mono';font-size:.74rem;letter-spacing:.06em;border:1px solid var(--dust);
     padding:9px 14px;color:var(--ink-mut);}
@@ -403,9 +406,36 @@
   </div>
   <p class="prod-lead">Depending on the photograph, available products may include:</p>
   <div class="prod-grid">
-    <div class="prod"><div class="idx">01</div><h3>Fine Art Prints</h3><p>Archival prints that hold the full detail and tonal range of the original photograph.</p></div>
-    <div class="prod"><div class="idx">02</div><h3>Framed Fine Art Prints</h3><p>Ready to hang, finished with care to suit ranch, home, and gallery spaces alike.</p></div>
-    <div class="prod"><div class="idx">03</div><h3>Gallery Wrapped Canvas</h3><p>A soft, contemporary presentation that lets larger pieces breathe on the wall.</p></div>
+    <div class="prod">
+      <figure class="prod-mock">
+        <img src="assets/mockups/fine-art-print.jpg" width="1440" height="960" alt="An unframed fine art print of a horse's eye, lying flat on a light surface." decoding="async">
+      </figure>
+      <div class="prod-copy">
+        <div class="idx">01</div>
+        <h3>Fine Art Prints</h3>
+        <p>Archival prints that hold the full detail and tonal range of the original photograph.</p>
+      </div>
+    </div>
+    <div class="prod">
+      <figure class="prod-mock">
+        <img src="assets/mockups/framed-fine-art-prints.jpg" width="1440" height="960" alt="Two framed fine art prints of a horse's eye: a matte black frame and a natural wood frame, both with wide off-white mats." decoding="async">
+      </figure>
+      <div class="prod-copy">
+        <div class="idx">02</div>
+        <h3>Framed Fine Art Prints</h3>
+        <p>Ready to hang, finished with care to suit ranch, home, and gallery spaces alike.</p>
+      </div>
+    </div>
+    <div class="prod">
+      <figure class="prod-mock">
+        <img src="assets/mockups/gallery-wrapped-canvas.jpg" width="1440" height="960" alt="A gallery-wrapped canvas of a horse's eye, with the photograph continuing around the edges." decoding="async">
+      </figure>
+      <div class="prod-copy">
+        <div class="idx">03</div>
+        <h3>Gallery Wrapped Canvas</h3>
+        <p>A soft, contemporary presentation that lets larger pieces breathe on the wall.</p>
+      </div>
+    </div>
   </div>
   <div class="field-label">Available sizes · original 3:2 composition</div>
   <div class="sizes-strip">
