@@ -223,6 +223,9 @@
     padding:9px 13px;cursor:pointer;transition:.2s;background:none;color:var(--ink-mut);}
   .prod-tab:hover{border-color:var(--clay);}
   .prod-tab.sel{border-color:var(--sage);background:#666b5012;color:var(--ink);}
+  #frameField .prod-tabs{margin-bottom:12px;}
+  .frame-note{font-size:.86rem;color:var(--ink-mut);margin:0 0 20px;}
+  .frame-note.need{color:var(--clay);margin-top:-12px;}
   .sizes{display:flex;flex-direction:column;gap:9px;margin-bottom:24px;}
   .size-opt{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--dust);
     padding:12px 15px;cursor:pointer;transition:.2s;}
@@ -418,12 +421,12 @@
     </div>
     <div class="prod">
       <figure class="prod-mock">
-        <img src="assets/mockups/framed-fine-art-prints.jpg" width="1440" height="960" alt="Two framed fine art prints of a horse's eye: a matte black frame and a natural wood frame, both with wide off-white mats." decoding="async">
+        <img src="assets/mockups/framed-fine-art-prints.jpg" width="1440" height="960" alt="Two framed fine art prints of a horse's eye: a matte black frame and a walnut frame, both with wide off-white mats." decoding="async">
       </figure>
       <div class="prod-copy">
         <div class="idx">02</div>
         <h3>Framed Fine Art Prints</h3>
-        <p>Ready to hang, finished with care to suit ranch, home, and gallery spaces alike.</p>
+        <p>Ready to hang, finished with care to suit ranch, home, and gallery spaces alike. Available in matte black or walnut.</p>
       </div>
     </div>
     <div class="prod">
@@ -566,6 +569,12 @@
     <div class="prod-tabs" id="prodTabs"></div>
     <div class="field-label">Size</div>
     <div class="sizes" id="modalSizes"></div>
+    <div id="frameField" hidden>
+      <div class="field-label">Frame</div>
+      <div class="prod-tabs" id="frameTabs" role="group" aria-label="Frame color"></div>
+      <p class="frame-note">Available in matte black or walnut.</p>
+      <p class="frame-note need" id="frameErr" hidden>Please choose Black or Walnut.</p>
+    </div>
     <button class="btn btn-solid" onclick="addToCart()">Add to cart</button>
   </div>
 </div></div>
@@ -660,18 +669,22 @@ addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>20));
 function toggleNav(){document.getElementById('navlinks').classList.toggle('mob');}
 
 /* ---- modal ---- */
-let current=null, selProd=null, selSize=null;
+const FRAMES={black:'Black',walnut:'Walnut'};
+let current=null, selProd=null, selSize=null, selFrame=null;
+function framePhrase(id){return FRAMES[id]?FRAMES[id]+' frame':'';}
+function detailLine(c){return c.frame?`${c.prod} · ${c.size} · ${framePhrase(c.frame)}`:`${c.prod} · ${c.size}`;}
 function openModal(id){
   current=PRINTS.find(p=>p.id===id);
   selProd=formats(current.tier)[0];
   selSize=avail(current.tier,selProd)[0];
+  selFrame=null;
   document.getElementById('modalArt').innerHTML=artInner(current);
   document.getElementById('modalArt').style.aspectRatio=current.ratio;
   document.getElementById('modalCol').textContent=current.collection;
   document.getElementById('modalTitle').textContent=current.title;
   document.getElementById('modalMed').textContent='Archival fine art photograph · signed by the artist';
   document.getElementById('modalDesc').textContent=current.desc;
-  renderTabs();renderSizes();
+  renderTabs();renderSizes();renderFrames();
   document.getElementById('modal').classList.add('open');
   document.getElementById('scrim').classList.add('open');
 }
@@ -679,7 +692,17 @@ function renderTabs(){
   document.getElementById('prodTabs').innerHTML=formats(current.tier).map(p=>
     `<button class="prod-tab ${p===selProd?'sel':''}" onclick="pickProd('${p}')">${PRODUCTS[p]}</button>`).join('');
 }
-function pickProd(p){selProd=p;selSize=avail(current.tier,p)[0];renderTabs();renderSizes();}
+function pickProd(p){selProd=p;selSize=avail(current.tier,p)[0];if(p!=='framed')selFrame=null;renderTabs();renderSizes();renderFrames();}
+function renderFrames(){
+  const field=document.getElementById('frameField');
+  const framed=selProd==='framed';
+  field.hidden=!framed;
+  if(!framed)return;
+  document.getElementById('frameTabs').innerHTML=Object.entries(FRAMES).map(([id,label])=>
+    `<button type="button" class="prod-tab ${id===selFrame?'sel':''}" aria-pressed="${id===selFrame}" onclick="pickFrame('${id}')">${label}</button>`).join('');
+  document.getElementById('frameErr').hidden=true;
+}
+function pickFrame(id){if(!FRAMES[id])return;selFrame=id;renderFrames();}
 function renderSizes(){
   const sizes=avail(current.tier,selProd);
   document.getElementById('modalSizes').innerHTML=sizes.map(s=>
@@ -691,11 +714,13 @@ function closeModal(){document.getElementById('modal').classList.remove('open');
 /* ---- cart ---- */
 let cart=[];
 function addToCart(){
+  if(selProd==='framed'&&!FRAMES[selFrame]){document.getElementById('frameErr').hidden=false;return;}
   const price=PRICE[selProd][selSize];
-  const key=current.id+'-'+selProd+'-'+selSize;
+  const frame=selProd==='framed'?selFrame:'';
+  const key=current.id+'-'+selProd+'-'+selSize+(frame?'-'+frame:'');
   const found=cart.find(c=>c.key===key);
   if(found)found.qty++;
-  else cart.push({key,id:current.id,tier:current.tier,format:selProd,sizeKey:selSize,title:current.title,collection:current.collection,prod:PRODUCTS[selProd],size:sizeLabel(selSize),price,qty:1,grad:current.grad,image:current.image});
+  else cart.push({key,id:current.id,tier:current.tier,format:selProd,sizeKey:selSize,frame,title:current.title,collection:current.collection,prod:PRODUCTS[selProd],size:sizeLabel(selSize),price,qty:1,grad:current.grad,image:current.image});
   renderCart();closeModal();openCart();
 }
 function renderCart(){
@@ -706,7 +731,7 @@ function renderCart(){
   box.innerHTML=cart.map(c=>{
     const thumb=c.image?`<img src="${c.image}" style="width:100%;height:100%;object-fit:cover;">`:`<div class="g" style="background:${c.grad}"></div>`;
     return `<div class="ci"><div class="thumb">${thumb}</div>
-      <div class="info"><div class="t">${c.title}</div><div class="s">${c.prod} · ${c.size}</div>
+      <div class="info"><div class="t">${c.title}</div><div class="s">${detailLine(c)}</div>
       <div class="qty"><button onclick="chQty('${c.key}',-1)">−</button><span>${c.qty}</span><button onclick="chQty('${c.key}',1)">+</button></div>
       <button class="rm" onclick="removeItem('${c.key}')">Remove</button></div>
       <div class="line">${money(c.price*c.qty)}</div></div>`;}).join('');
@@ -743,7 +768,7 @@ function needsQuote(country,region){
   return false;
 }
 function orderRows(){
-  return cart.map(c=>`<div class="row"><span>${c.title} — ${c.prod}, ${c.size}${c.qty>1?' &times;'+c.qty:''}</span><span>${money(c.price*c.qty)}</span></div>`).join('');
+  return cart.map(c=>`<div class="row"><span>${c.title} — ${c.prod}, ${c.size}${c.frame?', '+framePhrase(c.frame):''}${c.qty>1?' &times;'+c.qty:''}</span><span>${money(c.price*c.qty)}</span></div>`).join('');
 }
 function continueFromShip(){
   const ca=document.getElementById('cCountry').value==='Canada';
@@ -780,7 +805,7 @@ async function payNow(){
   btn.disabled=true; btn.textContent='Opening secure checkout…';
   try{
     const r=await fetch('/.netlify/functions/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({items:cart.map(c=>({id:c.id,title:c.title,collection:c.collection,tier:c.tier,format:c.format,size:c.sizeKey,qty:c.qty})),ship})});
+      body:JSON.stringify({items:cart.map(c=>{const item={id:c.id,title:c.title,collection:c.collection,tier:c.tier,format:c.format,size:c.sizeKey,qty:c.qty};if(c.frame)item.frame=c.frame;return item;}),ship})});
     const d=await r.json().catch(()=>({}));
     if(!r.ok||!d.url) throw new Error(d.error||'Checkout is unavailable right now.');
     window.location.href=d.url;   /* Square-hosted secure checkout (cards, Apple Pay, Google Pay) */
@@ -795,7 +820,7 @@ async function payNow(){
 }
 function requestQuote(){
   const total=money(cart.reduce((a,c)=>a+c.price*c.qty,0));
-  const lines=cart.map(c=>`\u2022 ${c.title} (${c.collection}) — ${c.prod}, ${c.size}, qty ${c.qty} — ${money(c.price*c.qty)}`).join('\n');
+  const lines=cart.map(c=>`\u2022 ${c.title} (${c.collection}) — ${c.prod}, ${c.size}${c.frame?', '+framePhrase(c.frame):''}, qty ${c.qty} — ${money(c.price*c.qty)}`).join('\n');
   const body=
 `NEW DUST & SPURS SHIPPING QUOTE REQUEST
 
