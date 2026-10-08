@@ -144,12 +144,15 @@
 
   /* PRINTS */
   .prints{background:var(--bone-2);}
-  .prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(20px,2.6vw,32px);margin-bottom:52px;}
-  @media(max-width:760px){.prod-grid{grid-template-columns:1fr;}}
-  .prod{border-top:1px solid var(--line);padding-top:22px;}
+  .prod-grid{display:flex;flex-direction:column;margin-bottom:8px;}
+  .prod{display:grid;grid-template-columns:minmax(0,1.22fr) minmax(220px,.78fr);gap:clamp(20px,3.4vw,48px);align-items:center;border-top:1px solid var(--line);padding:clamp(28px,3.4vw,42px) 0;}
+  .prod-mock{margin:0;min-width:0;background:var(--dust-lt);padding:clamp(10px,1.2vw,16px);border:1px solid #0000000d;box-shadow:var(--shadow);transition:transform .4s,box-shadow .4s;}
+  .prod:hover .prod-mock{transform:translateY(-4px);box-shadow:0 34px 60px -34px rgba(40,32,25,.6);}
+  .prod-mock img{width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;}
   .prod .idx{font-family:'Space Mono';font-size:.62rem;letter-spacing:.2em;color:var(--clay);}
-  .prod h3{font-size:1.3rem;margin:12px 0 10px;}
-  .prod p{color:var(--ink-mut);font-size:.92rem;margin:0;}
+  .prod h3{font-size:clamp(1.45rem,2.2vw,1.85rem);margin:12px 0 10px;}
+  .prod p{color:var(--ink-mut);font-size:.96rem;margin:0;max-width:36ch;}
+  @media(max-width:760px){.prod{grid-template-columns:1fr;gap:16px;align-items:start;}}
   .sizes-strip{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 40px;}
   .sizes-strip .sz{font-family:'Space Mono';font-size:.74rem;letter-spacing:.06em;border:1px solid var(--dust);
     padding:9px 14px;color:var(--ink-mut);}
@@ -220,6 +223,9 @@
     padding:9px 13px;cursor:pointer;transition:.2s;background:none;color:var(--ink-mut);}
   .prod-tab:hover{border-color:var(--clay);}
   .prod-tab.sel{border-color:var(--sage);background:#666b5012;color:var(--ink);}
+  #frameField .prod-tabs{margin-bottom:12px;}
+  .frame-note{font-size:.86rem;color:var(--ink-mut);margin:0 0 20px;}
+  .frame-note.need{color:var(--clay);margin-top:-12px;}
   .sizes{display:flex;flex-direction:column;gap:9px;margin-bottom:24px;}
   .size-opt{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--dust);
     padding:12px 15px;cursor:pointer;transition:.2s;}
@@ -403,9 +409,36 @@
   </div>
   <p class="prod-lead">Depending on the photograph, available products may include:</p>
   <div class="prod-grid">
-    <div class="prod"><div class="idx">01</div><h3>Fine Art Prints</h3><p>Archival prints that hold the full detail and tonal range of the original photograph.</p></div>
-    <div class="prod"><div class="idx">02</div><h3>Framed Fine Art Prints</h3><p>Ready to hang, finished with care to suit ranch, home, and gallery spaces alike.</p></div>
-    <div class="prod"><div class="idx">03</div><h3>Gallery Wrapped Canvas</h3><p>A soft, contemporary presentation that lets larger pieces breathe on the wall.</p></div>
+    <div class="prod">
+      <figure class="prod-mock">
+        <img src="assets/mockups/fine-art-print.jpg" width="1440" height="960" alt="An unframed fine art print of a horse's eye, lying flat on a light surface." decoding="async">
+      </figure>
+      <div class="prod-copy">
+        <div class="idx">01</div>
+        <h3>Fine Art Prints</h3>
+        <p>Archival prints that hold the full detail and tonal range of the original photograph.</p>
+      </div>
+    </div>
+    <div class="prod">
+      <figure class="prod-mock">
+        <img src="assets/mockups/framed-fine-art-prints.jpg" width="1440" height="960" alt="Two framed fine art prints of a horse's eye: a matte black frame and a walnut frame, both with wide off-white mats." decoding="async">
+      </figure>
+      <div class="prod-copy">
+        <div class="idx">02</div>
+        <h3>Framed Fine Art Prints</h3>
+        <p>Ready to hang, finished with care to suit ranch, home, and gallery spaces alike. Available in matte black or walnut.</p>
+      </div>
+    </div>
+    <div class="prod">
+      <figure class="prod-mock">
+        <img src="assets/mockups/gallery-wrapped-canvas.jpg" width="1440" height="960" alt="A gallery-wrapped canvas of a horse's eye, with the photograph continuing around the edges." decoding="async">
+      </figure>
+      <div class="prod-copy">
+        <div class="idx">03</div>
+        <h3>Gallery Wrapped Canvas</h3>
+        <p>A soft, contemporary presentation that lets larger pieces breathe on the wall.</p>
+      </div>
+    </div>
   </div>
   <div class="field-label">Available sizes · original 3:2 composition</div>
   <div class="sizes-strip">
@@ -536,6 +569,12 @@
     <div class="prod-tabs" id="prodTabs"></div>
     <div class="field-label">Size</div>
     <div class="sizes" id="modalSizes"></div>
+    <div id="frameField" hidden>
+      <div class="field-label">Frame</div>
+      <div class="prod-tabs" id="frameTabs" role="group" aria-label="Frame color"></div>
+      <p class="frame-note">Available in matte black or walnut.</p>
+      <p class="frame-note need" id="frameErr" hidden>Please choose Black or Walnut.</p>
+    </div>
     <button class="btn btn-solid" onclick="addToCart()">Add to cart</button>
   </div>
 </div></div>
@@ -630,18 +669,22 @@ addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>20));
 function toggleNav(){document.getElementById('navlinks').classList.toggle('mob');}
 
 /* ---- modal ---- */
-let current=null, selProd=null, selSize=null;
+const FRAMES={black:'Black',walnut:'Walnut'};
+let current=null, selProd=null, selSize=null, selFrame=null;
+function framePhrase(id){return FRAMES[id]?FRAMES[id]+' frame':'';}
+function detailLine(c){return c.frame?`${c.prod} · ${c.size} · ${framePhrase(c.frame)}`:`${c.prod} · ${c.size}`;}
 function openModal(id){
   current=PRINTS.find(p=>p.id===id);
   selProd=formats(current.tier)[0];
   selSize=avail(current.tier,selProd)[0];
+  selFrame=null;
   document.getElementById('modalArt').innerHTML=artInner(current);
   document.getElementById('modalArt').style.aspectRatio=current.ratio;
   document.getElementById('modalCol').textContent=current.collection;
   document.getElementById('modalTitle').textContent=current.title;
   document.getElementById('modalMed').textContent='Archival fine art photograph · signed by the artist';
   document.getElementById('modalDesc').textContent=current.desc;
-  renderTabs();renderSizes();
+  renderTabs();renderSizes();renderFrames();
   document.getElementById('modal').classList.add('open');
   document.getElementById('scrim').classList.add('open');
 }
@@ -649,7 +692,17 @@ function renderTabs(){
   document.getElementById('prodTabs').innerHTML=formats(current.tier).map(p=>
     `<button class="prod-tab ${p===selProd?'sel':''}" onclick="pickProd('${p}')">${PRODUCTS[p]}</button>`).join('');
 }
-function pickProd(p){selProd=p;selSize=avail(current.tier,p)[0];renderTabs();renderSizes();}
+function pickProd(p){selProd=p;selSize=avail(current.tier,p)[0];if(p!=='framed')selFrame=null;renderTabs();renderSizes();renderFrames();}
+function renderFrames(){
+  const field=document.getElementById('frameField');
+  const framed=selProd==='framed';
+  field.hidden=!framed;
+  if(!framed)return;
+  document.getElementById('frameTabs').innerHTML=Object.entries(FRAMES).map(([id,label])=>
+    `<button type="button" class="prod-tab ${id===selFrame?'sel':''}" aria-pressed="${id===selFrame}" onclick="pickFrame('${id}')">${label}</button>`).join('');
+  document.getElementById('frameErr').hidden=true;
+}
+function pickFrame(id){if(!FRAMES[id])return;selFrame=id;renderFrames();}
 function renderSizes(){
   const sizes=avail(current.tier,selProd);
   document.getElementById('modalSizes').innerHTML=sizes.map(s=>
@@ -661,11 +714,13 @@ function closeModal(){document.getElementById('modal').classList.remove('open');
 /* ---- cart ---- */
 let cart=[];
 function addToCart(){
+  if(selProd==='framed'&&!FRAMES[selFrame]){document.getElementById('frameErr').hidden=false;return;}
   const price=PRICE[selProd][selSize];
-  const key=current.id+'-'+selProd+'-'+selSize;
+  const frame=selProd==='framed'?selFrame:'';
+  const key=current.id+'-'+selProd+'-'+selSize+(frame?'-'+frame:'');
   const found=cart.find(c=>c.key===key);
   if(found)found.qty++;
-  else cart.push({key,id:current.id,tier:current.tier,format:selProd,sizeKey:selSize,title:current.title,collection:current.collection,prod:PRODUCTS[selProd],size:sizeLabel(selSize),price,qty:1,grad:current.grad,image:current.image});
+  else cart.push({key,id:current.id,tier:current.tier,format:selProd,sizeKey:selSize,frame,title:current.title,collection:current.collection,prod:PRODUCTS[selProd],size:sizeLabel(selSize),price,qty:1,grad:current.grad,image:current.image});
   renderCart();closeModal();openCart();
 }
 function renderCart(){
@@ -676,7 +731,7 @@ function renderCart(){
   box.innerHTML=cart.map(c=>{
     const thumb=c.image?`<img src="${c.image}" style="width:100%;height:100%;object-fit:cover;">`:`<div class="g" style="background:${c.grad}"></div>`;
     return `<div class="ci"><div class="thumb">${thumb}</div>
-      <div class="info"><div class="t">${c.title}</div><div class="s">${c.prod} · ${c.size}</div>
+      <div class="info"><div class="t">${c.title}</div><div class="s">${detailLine(c)}</div>
       <div class="qty"><button onclick="chQty('${c.key}',-1)">−</button><span>${c.qty}</span><button onclick="chQty('${c.key}',1)">+</button></div>
       <button class="rm" onclick="removeItem('${c.key}')">Remove</button></div>
       <div class="line">${money(c.price*c.qty)}</div></div>`;}).join('');
@@ -713,7 +768,7 @@ function needsQuote(country,region){
   return false;
 }
 function orderRows(){
-  return cart.map(c=>`<div class="row"><span>${c.title} — ${c.prod}, ${c.size}${c.qty>1?' &times;'+c.qty:''}</span><span>${money(c.price*c.qty)}</span></div>`).join('');
+  return cart.map(c=>`<div class="row"><span>${c.title} — ${c.prod}, ${c.size}${c.frame?', '+framePhrase(c.frame):''}${c.qty>1?' &times;'+c.qty:''}</span><span>${money(c.price*c.qty)}</span></div>`).join('');
 }
 function continueFromShip(){
   const ca=document.getElementById('cCountry').value==='Canada';
@@ -750,7 +805,7 @@ async function payNow(){
   btn.disabled=true; btn.textContent='Opening secure checkout…';
   try{
     const r=await fetch('/.netlify/functions/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({items:cart.map(c=>({id:c.id,title:c.title,collection:c.collection,tier:c.tier,format:c.format,size:c.sizeKey,qty:c.qty})),ship})});
+      body:JSON.stringify({items:cart.map(c=>{const item={id:c.id,title:c.title,collection:c.collection,tier:c.tier,format:c.format,size:c.sizeKey,qty:c.qty};if(c.frame)item.frame=c.frame;return item;}),ship})});
     const d=await r.json().catch(()=>({}));
     if(!r.ok||!d.url) throw new Error(d.error||'Checkout is unavailable right now.');
     window.location.href=d.url;   /* Square-hosted secure checkout (cards, Apple Pay, Google Pay) */
@@ -765,7 +820,7 @@ async function payNow(){
 }
 function requestQuote(){
   const total=money(cart.reduce((a,c)=>a+c.price*c.qty,0));
-  const lines=cart.map(c=>`\u2022 ${c.title} (${c.collection}) — ${c.prod}, ${c.size}, qty ${c.qty} — ${money(c.price*c.qty)}`).join('\n');
+  const lines=cart.map(c=>`\u2022 ${c.title} (${c.collection}) — ${c.prod}, ${c.size}${c.frame?', '+framePhrase(c.frame):''}, qty ${c.qty} — ${money(c.price*c.qty)}`).join('\n');
   const body=
 `NEW DUST & SPURS SHIPPING QUOTE REQUEST
 

@@ -23,6 +23,7 @@ const TIERS = {
   collector: {print:['16x24','24x36','32x48'], framed:['16x24','24x36','32x48'], canvas:['16x24','24x36','32x48']},
 };
 const PRODUCTS = {print:'Fine Art Print', framed:'Framed Print', canvas:'Gallery Wrapped Canvas'};
+const FRAMES = {black:'Black', walnut:'Walnut'};
 
 // ---- Shipping rules (keep in sync with the website) ----
 const QUOTE_PROVINCES = ['Quebec','Yukon','Northwest Territories'];
@@ -64,10 +65,18 @@ exports.handler = async (event) => {
     if (price == null || !allowed) return json(400, {error:`"${clean(it.title)}" is not available in that size or format.`});
     const qty = Math.max(1, Math.min(10, parseInt(it.qty, 10) || 1));
     total += price * qty;
+    let variation = `${PRODUCTS[format]} · ${size.replace('x',' × ')}"`;
+    let note = 'Collection: ' + clean(it.collection);
+    if (format === 'framed') {
+      const frameName = FRAMES[it.frame];
+      if (!frameName) return json(400, {error:`Please choose a Black or Walnut frame for "${clean(it.title)}".`});
+      variation += ` · ${frameName} frame`;
+      note += ' · Frame: ' + frameName;
+    }
     line_items.push({
       name: clean(it.title),
-      variation_name: `${PRODUCTS[format]} · ${size.replace('x',' × ')}"`,
-      note: 'Collection: ' + clean(it.collection),
+      variation_name: variation,
+      note,
       quantity: String(qty),
       item_type: 'ITEM',
       base_price_money: { amount: price * 100, currency: 'CAD' },
