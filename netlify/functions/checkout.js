@@ -83,10 +83,12 @@ exports.handler = async (event) => {
     });
   }
 
-  // --- taxes are INCLUDED in the displayed price; recorded on the order without changing the total ---
-  const taxes = [{ uid:'pst', name:'Saskatchewan PST (included in price)', percentage: String(process.env.TAX_PST_PCT || '6'), scope:'ORDER', inclusion_type:'INCLUSIVE' }];
+  // Prices on the site already include tax. Square order taxes use `type`
+  // (ADDITIVE or INCLUSIVE). `inclusion_type` is only a catalog-tax field;
+  // Square ignores it on an order and then adds the percentage on top.
+  const taxes = [{ uid:'pst', name:'Saskatchewan PST (included in price)', percentage: String(process.env.TAX_PST_PCT || '6'), scope:'ORDER', type:'INCLUSIVE' }];
   if ((process.env.GST_ENABLED||'').toLowerCase() === 'true')
-    taxes.push({ uid:'gst', name:'GST (included in price)', percentage: String(process.env.GST_PCT || '5'), scope:'ORDER', inclusion_type:'INCLUSIVE' });
+    taxes.push({ uid:'gst', name:'GST (included in price)', percentage: String(process.env.GST_PCT || '5'), scope:'ORDER', type:'INCLUSIVE' });
 
   const siteUrl = (process.env.SITE_URL || `https://${event.headers.host}`).replace(/\/$/, '');
   const nameParts = clean(ship.name).split(/\s+/);
@@ -138,6 +140,12 @@ exports.handler = async (event) => {
     const detail = data.errors && data.errors[0] && data.errors[0].detail;
     console.error('Square error', r.status, JSON.stringify(data));
     return json(502, {error: 'Square could not open the checkout' + (detail ? ': ' + detail : '.') });
+  }
+  const squareOrder = data.related_resources && data.related_resources.orders && data.related_resources.orders[0];
+  const charged = squareOrder && squareOrder.total_money && Number(squareOrder.total_money.amount);
+  if (Number.isFinite(charged) && charged !== total * 100) {
+    console.error('Square total did not match the site price', JSON.stringify({ charged, expected: total * 100, total_tax_money: squareOrder.total_tax_money, taxes: squareOrder.taxes }));
+    return json(502, {error: 'Checkout total did not match the price on the site. Please email hello@dustandspurs.ca to complete your order.'});
   }
   return json(200, { url: data.payment_link.url, orderId: data.payment_link.order_id, reference, total });
 };
