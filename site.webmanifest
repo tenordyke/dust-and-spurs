@@ -1,0 +1,12 @@
+{
+  "name": "Dust & Spurs Western Photography",
+  "short_name": "Dust & Spurs",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#E8E1D3",
+  "theme_color": "#4A4E38"
+}
