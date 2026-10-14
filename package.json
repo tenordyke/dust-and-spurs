@@ -1,0 +1,11 @@
+{
+  "name": "dust-and-spurs",
+  "private": true,
+  "description": "Dust & Spurs website. Square checkout and paid-order alerts.",
+  "scripts": {
+    "test": "node test/square-webhook.test.js"
+  },
+  "dependencies": {
+    "nodemailer": "^10.1.1"
+  }
+}
