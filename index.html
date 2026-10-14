@@ -592,6 +592,7 @@
     <div class="cv-body">
       <label>Full name</label><input type="text" id="cName" autocomplete="name">
       <label>Email</label><input type="email" id="cEmail" autocomplete="email">
+      <label>Phone</label><input type="tel" id="cPhone" autocomplete="tel" inputmode="tel">
       <label>Shipping address</label><input type="text" id="cAddr" autocomplete="street-address">
       <label>City / town</label><input type="text" id="cCity">
       <label>Country</label>
@@ -870,6 +871,7 @@ function continueFromShip(){
   ship={
     name:document.getElementById('cName').value.trim(),
     email:document.getElementById('cEmail').value.trim(),
+    phone:document.getElementById('cPhone').value.trim(),
     addr:document.getElementById('cAddr').value.trim(),
     city:document.getElementById('cCity').value.trim(),
     country:document.getElementById('cCountry').value,
@@ -879,12 +881,13 @@ function continueFromShip(){
   const miss=[];
   if(!ship.name)miss.push('name');
   if(!ship.email||!/.+@.+\..+/.test(ship.email))miss.push('a valid email');
+  if((ship.phone||'').replace(/\D/g,'').length<10)miss.push('phone number');
   if(!ship.addr)miss.push('address');
   if(!ship.city)miss.push('city');
   if(!ship.region)miss.push(ca?'province/territory':'state');
   if(!ship.postal)miss.push(ca?'postal code':'ZIP code');
   if(miss.length){ document.getElementById('shipErr').textContent='Please add your '+miss.join(', ')+'.'; return; }
-  const shipto=`${ship.name}<br>${ship.addr}, ${ship.city}<br>${ship.region}, ${ship.country} ${ship.postal}<br>${ship.email}`;
+  const shipto=`${ship.name}<br>${ship.addr}, ${ship.city}<br>${ship.region}, ${ship.country} ${ship.postal}<br>${ship.email}<br>${ship.phone}`;
   if(needsQuote(ship.country, ship.region)){
     document.getElementById('quoteSummary').innerHTML=orderRows()+`<div class="shipto"><strong>Ship to</strong><br>${shipto}</div>`;
     showView('quote');
@@ -922,6 +925,7 @@ function requestQuote(){
 Customer
 Name: ${ship.name}
 Email: ${ship.email}
+Phone: ${ship.phone}
 Address: ${ship.addr}
 City: ${ship.city}
 ${ship.country==='Canada'?'Province/Territory':'State'}: ${ship.region}

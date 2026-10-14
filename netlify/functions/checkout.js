@@ -10,6 +10,7 @@
 //   GST_ENABLED / GST_PCT – optional; set GST_ENABLED=true (and GST_PCT, default 5) once registered
 
 const crypto = require('crypto');
+const { normalizePhone } = require('../../lib/phone');
 
 // ---- Trusted price list (must match the website). Prices are all-in CAD. ----
 const PRICE = {
@@ -51,6 +52,8 @@ exports.handler = async (event) => {
   const need = ['name','email','addr','city','country','region','postal'].filter(k => !clean(ship[k]));
   if (need.length) return json(400, {error:'Missing shipping details: '+need.join(', ')});
   if (!/.+@.+\..+/.test(ship.email)) return json(400, {error:'Please enter a valid email address.'});
+  const buyerPhone = normalizePhone(ship.phone);
+  if (!buyerPhone) return json(400, {error:'Please enter a phone number we can reach you at.'});
   if (QUOTE_COUNTRIES.includes(ship.country) || (ship.country==='Canada' && QUOTE_PROVINCES.includes(ship.region)))
     return json(400, {error:'This destination requires a shipping quote before payment.'});
   if (ship.country !== 'Canada') return json(400, {error:'Unsupported destination.'});
@@ -105,6 +108,7 @@ exports.handler = async (event) => {
         ship_to_name: clean(ship.name, 255),
         ship_to: clean(`${ship.addr}, ${ship.city}, ${ship.region}, ${ship.country} ${ship.postal}`, 255),
         customer_email: clean(ship.email, 255),
+        customer_phone: clean(ship.phone, 40),
         source: 'dustandspurs.ca website',
       },
     },
@@ -117,6 +121,7 @@ exports.handler = async (event) => {
     },
     pre_populated_data: {
       buyer_email: clean(ship.email),
+      buyer_phone_number: buyerPhone,
       buyer_address: {
         first_name: nameParts[0] || '',
         last_name: nameParts.slice(1).join(' ') || '',

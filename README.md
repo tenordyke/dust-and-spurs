@@ -87,3 +87,123 @@ Day-to-day
 - If prices or sizes change, update them in BOTH index.html and
   netlify/functions/checkout.js (the function re-checks every price for safety).
 - When the custom domain dustandspurs.ca is connected, update SITE_URL and redeploy.
+
+---------------------------------------------------------------------
+Paid order alert (email to hello@dustandspurs.ca)
+---------------------------------------------------------------------
+Square's own "you got paid" email does not list the print, size, or frame.
+When a website order is paid, Netlify emails hello@dustandspurs.ca with the
+Square order id, reference, each item (name, size, paper/canvas/framed type,
+frame color when it is framed, quantity, price), subtotal, included tax,
+shipping, total, customer name, email, phone, and the full shipping address.
+The message asks Alix to place the matching order in Gelato.
+
+In-person sales rung up in Square are ignored. Only website orders are emailed
+(the order is marked source "dustandspurs.ca website", or its reference starts
+with DS-). The same order is emailed once. A repeat webhook does not send a
+second message.
+
+The website checkout form collects name, email, phone, and shipping address.
+Square's payment page is prefilled with those, and it still asks the buyer to
+confirm the shipping address.
+
+---------------------------------------------------------------------
+STEP 6. Environment variables for the alert
+---------------------------------------------------------------------
+Add these in Netlify beside the Square variables from Step 2. Redeploy after
+any change. Never put the values in the website files or in git.
+
+Already required (same token and location the checkout function uses):
+
+   SQUARE_ACCESS_TOKEN
+   SQUARE_LOCATION_ID
+   SQUARE_ENV                 sandbox or production. Must match the webhook below.
+
+Webhook (required):
+
+   SQUARE_WEBHOOK_SIGNATURE_KEY
+        The signature key Square shows for this webhook subscription.
+   SQUARE_WEBHOOK_NOTIFICATION_URL
+        The notification URL copied exactly from that same subscription,
+        including https. The signature check uses this string. If it differs
+        by even one character, every webhook is rejected.
+
+Email. Use the existing hello@dustandspurs.ca mailbox. No new paid account.
+
+   SMTP_HOST                  from the mailbox SMTP settings
+   SMTP_PORT                  usually 587. Use 465 only if the mailbox says so.
+   SMTP_USER                  the full mailbox address, usually hello@dustandspurs.ca
+   SMTP_PASS                  the mailbox password or app password
+   SMTP_FROM                  optional. Defaults to SMTP_USER. Hosted mail usually
+                              requires this to be that same mailbox.
+
+Optional, only if you are not using the mailbox SMTP:
+
+   RESEND_API_KEY
+   RESEND_FROM                a from-address Resend has verified
+
+If SMTP_HOST is set, the mailbox is used and Resend is ignored.
+
+Optional:
+
+   ORDER_ALERT_EMAIL          who receives the alert. Defaults to hello@dustandspurs.ca.
+                              Point this at a personal inbox while testing.
+   SQUARE_VERSION             optional. Defaults to 2024-11-20.
+
+The site runs on Node 22, set in netlify.toml. Leave that in place. The mail
+library needs Node 20 or newer.
+
+Hostedemail: open the hello@dustandspurs.ca mailbox settings and copy the SMTP
+host, port, username, and password from there. The host is often
+mail.hostedemail.com and the port is often 587. Use the values the mailbox
+shows. Do not invent them.
+
+---------------------------------------------------------------------
+STEP 7. Square webhook subscription
+---------------------------------------------------------------------
+Sandbox and production are separate subscriptions, with different signature
+keys. Create the sandbox subscription first. The endpoint's SQUARE_ENV and
+access token must be the same environment as the subscription. Do not point a
+production webhook at a site that still has SQUARE_ENV=sandbox.
+
+1. Open https://developer.squareup.com/apps and the app "Dust & Spurs Website".
+2. Switch to Sandbox (top of the page) for a test, or Production when going live.
+3. Left menu: Webhooks, then Subscriptions, then Add subscription.
+4. Name it "Dust & Spurs order alert".
+5. Notification URL, exactly one of:
+      Production:  https://dustandspurs.ca/.netlify/functions/square-webhook
+      Sandbox test on a deploy preview:
+                   https://deploy-preview-NUMBER--heroic-flan-fc0427.netlify.app/.netlify/functions/square-webhook
+   Replace NUMBER with the preview's pull request number. The path
+   /.netlify/functions/square-webhook stays the same.
+6. API version: 2024-11-20 or newer.
+7. Events: payment.updated and order.updated. Save.
+8. Open the subscription, choose Show beside Signature key, and copy it into
+   SQUARE_WEBHOOK_SIGNATURE_KEY.
+9. Copy the notification URL you saved, unchanged, into
+   SQUARE_WEBHOOK_NOTIFICATION_URL.
+10. Redeploy the site so Netlify picks up the new variables.
+
+---------------------------------------------------------------------
+STEP 8. Test the alert safely (no real charge)
+---------------------------------------------------------------------
+1. On a computer with this folder, run:  npm install   then   npm test
+   That checks the signature, the email text, and duplicate protection.
+   It does not call Square and does not send mail.
+2. In Netlify, set SQUARE_ENV=sandbox, the sandbox token, the sandbox location,
+   the sandbox signature key, and SQUARE_WEBHOOK_NOTIFICATION_URL to the preview
+   URL from Step 7. Set ORDER_ALERT_EMAIL to an inbox you can open. Add the
+   SMTP variables. Redeploy.
+3. On that preview, add a print, enter a Canadian address and a real phone
+   number (Square rejects obvious fake numbers such as 555), and pay with
+   Square's sandbox card:
+      4111 1111 1111 1111    any future expiry    CVV 111    any postal code
+4. Confirm one email arrives with the item, size, type, frame if any, prices,
+   phone, and shipping address, and that it says to place the order in Gelato.
+5. In the Square Developer webhook logs, resend the same event. A second email
+   must not arrive.
+6. Only after that, create the production subscription aimed at
+   https://dustandspurs.ca/.netlify/functions/square-webhook
+   with the production signature key, production token, and SQUARE_ENV=production.
+   Set ORDER_ALERT_EMAIL back to hello@dustandspurs.ca if you changed it.
+   Redeploy. Do not use a real card until that production check is the one you intend.

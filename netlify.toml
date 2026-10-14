@@ -2,6 +2,15 @@
 [build]
   publish = "."
 
+[build.environment]
+  # nodemailer 10 needs Node 20 or newer. Checkout uses the same runtime.
+  NODE_VERSION = "22"
+
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  # nodemailer loads its own files at runtime; esbuild cannot bundle them reliably.
+  external_node_modules = ["nodemailer"]
+
+[functions.square-webhook]
+  timeout = 26
