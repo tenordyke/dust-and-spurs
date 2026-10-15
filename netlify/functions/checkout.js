@@ -1,4 +1,4 @@
-// Dust & Spurs — Square checkout (Netlify serverless function)
+// Dust & Spurs: Square checkout (Netlify serverless function)
 // Creates a Square-hosted checkout page for the customer's order.
 // Secrets live ONLY in Netlify environment variables (never in the website file):
 //   SQUARE_ACCESS_TOKEN  – from developer.squareup.com (Production access token)
@@ -183,7 +183,7 @@ exports.handler = async (event) => {
         country: 'CA',
       },
     },
-    payment_note: `Dust & Spurs order ${reference} — ${clean(ship.name)}`,
+    payment_note: `Dust & Spurs order ${reference}: ${clean(ship.name)}`,
   };
 
   const r = await fetch(base + '/v2/online-checkout/payment-links', {

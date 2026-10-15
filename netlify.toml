@@ -1,4 +1,4 @@
-# Dust & Spurs — Netlify configuration
+# Dust & Spurs: Netlify configuration
 [build]
   publish = "."
 
@@ -14,3 +14,12 @@
 
 [functions.square-webhook]
   timeout = 26
+
+# Security headers. No Content-Security-Policy, so Square checkout and the functions stay usable.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
