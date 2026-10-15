@@ -725,7 +725,7 @@ async function main() {
     assert.ok(book.includes('Inside: title and introduction'));
     assert.ok(book.includes('Inside: Quiet Presence'));
     assert.ok(book.includes('Inside: Peace in Motion'));
-    assert.ok(book.includes('loading="eager"'));
+    assert.ok(book.includes('loading="lazy"'));
     assert.ok(book.indexOf('front-cover.jpg') < book.indexOf('back-cover.jpg'));
     assert.ok(book.indexOf('Inside: title and introduction') < book.indexOf('Inside: Quiet Presence'));
     assert.ok(book.indexOf('Inside: Quiet Presence') < book.indexOf('Inside: Peace in Motion'));
