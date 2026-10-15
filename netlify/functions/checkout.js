@@ -25,6 +25,23 @@ const TIERS = {
 };
 const PRODUCTS = {print:'Fine Art Print', framed:'Framed Print', canvas:'Gallery Wrapped Canvas'};
 const FRAMES = {black:'Black', walnut:'Walnut'};
+const POSTER_PRICE = {standard:49, hanging:65};
+const POSTER_LABEL = {standard:'Standard poster', hanging:'Hanging poster'};
+const POSTERS = {
+  'against-the-light': ['Against the Light', 'Ranch Life'],
+  'along-the-fence-line': ['Along the Fence Line', 'Open Country'],
+  'at-ease': ['At Ease', 'Quiet Presence'],
+  'curious-up-close': ['Curious Up Close', 'Textures of the West'],
+  'kindred': ['Kindred', 'Life Among the Herd'],
+  'peace-in-motion': ['Peace in Motion', 'Quiet Presence'],
+  'prairie-watcher': ['Prairie Watcher', 'Quiet Strength'],
+  'rooted': ['Rooted', 'Textures of the West'],
+  'shared-ground': ['Shared Ground', 'Open Country'],
+  'the-gathering': ['The Gathering', 'Life Among the Herd'],
+  'unspoken-knowing': ['Unspoken Knowing', 'Quiet Presence'],
+  'where-dust-settles': ['Where Dust Settles', 'Ranch Life'],
+};
+const BOOK_PRICE = 79;
 
 // ---- Shipping rules (keep in sync with the website) ----
 const QUOTE_PROVINCES = ['Quebec','Yukon','Northwest Territories'];
@@ -32,6 +49,32 @@ const QUOTE_COUNTRIES = ['United States'];
 const PROV = {'Alberta':'AB','British Columbia':'BC','Manitoba':'MB','New Brunswick':'NB','Newfoundland and Labrador':'NL',
   'Northwest Territories':'NT','Nova Scotia':'NS','Nunavut':'NU','Ontario':'ON','Prince Edward Island':'PE','Quebec':'QC',
   'Saskatchewan':'SK','Yukon':'YT'};
+
+function catalogLine(it, qty) {
+  if (it.format === 'poster') {
+    const poster = POSTERS[it.id];
+    const price = POSTER_PRICE[it.display];
+    if (!poster || price == null) return {error:`"${clean(it.title || it.id)}" is not available in that display option.`};
+    const label = POSTER_LABEL[it.display];
+    return {price, line:{
+      name: poster[0],
+      variation_name: `Fine Art Poster · 12 × 18" · ${label}`,
+      note: 'Collection: ' + poster[1] + ' · Display: ' + label,
+      quantity: String(qty),
+      item_type: 'ITEM',
+      base_price_money: { amount: price * 100, currency: 'CAD' },
+    }};
+  }
+  if (it.id !== 'stories-of-the-west') return {error:'That book is not available.'};
+  return {price: BOOK_PRICE, line:{
+    name: 'Dust & Spurs: Stories of the West',
+    variation_name: 'Hardcover Photo Book · 8 × 11"',
+    note: '58 pages, landscape',
+    quantity: String(qty),
+    item_type: 'ITEM',
+    base_price_money: { amount: BOOK_PRICE * 100, currency: 'CAD' },
+  }};
+}
 
 const json = (statusCode, obj) => ({ statusCode, headers: {'Content-Type':'application/json'}, body: JSON.stringify(obj) });
 const clean = (s, n=120) => String(s||'').replace(/[\r\n\t]/g,' ').trim().slice(0, n);
@@ -62,11 +105,19 @@ exports.handler = async (event) => {
   if (!items.length) return json(400, {error:'Your selection is empty.'});
   const line_items = []; let total = 0;
   for (const it of items) {
-    const format = it.format, size = it.size, tier = it.tier;
+    const format = it.format;
+    const qty = Math.max(1, Math.min(10, parseInt(it.qty, 10) || 1));
+    if (format === 'poster' || format === 'book') {
+      const built = catalogLine(it, qty);
+      if (built.error) return json(400, {error: built.error});
+      total += built.price * qty;
+      line_items.push(built.line);
+      continue;
+    }
+    const size = it.size, tier = it.tier;
     const price = PRICE[format] && PRICE[format][size];
     const allowed = TIERS[tier] && TIERS[tier][format] && TIERS[tier][format].includes(size);
     if (price == null || !allowed) return json(400, {error:`"${clean(it.title)}" is not available in that size or format.`});
-    const qty = Math.max(1, Math.min(10, parseInt(it.qty, 10) || 1));
     total += price * qty;
     let variation = `${PRODUCTS[format]} · ${size.replace('x',' × ')}"`;
     let note = 'Collection: ' + clean(it.collection);

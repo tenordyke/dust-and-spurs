@@ -224,10 +224,37 @@ async function main() {
     assert.strictEqual(framed.type, 'Framed Print');
     assert.strictEqual(framed.size, '16 × 24');
     assert.strictEqual(framed.frame, 'Black');
+    assert.strictEqual(framed.display, '');
     const canvas = wh.describeItem({ variation_name: 'Gallery Wrapped Canvas · 24 × 36"', quantity: '1' });
     assert.strictEqual(canvas.type, 'Gallery Wrapped Canvas');
     assert.strictEqual(canvas.size, '24 × 36');
     assert.strictEqual(canvas.frame, '');
+    assert.strictEqual(canvas.display, '');
+    const poster = wh.describeItem({
+      name: 'Peace in Motion',
+      variation_name: 'Fine Art Poster · 12 × 18" · Hanging poster',
+      quantity: '2',
+      base_price_money: { amount: 6500, currency: 'CAD' },
+      note: 'Collection: Quiet Presence · Display: Hanging poster',
+    });
+    assert.strictEqual(poster.name, 'Peace in Motion');
+    assert.strictEqual(poster.type, 'Fine Art Poster');
+    assert.strictEqual(poster.size, '12 × 18');
+    assert.strictEqual(poster.display, 'Hanging poster');
+    assert.strictEqual(poster.frame, '');
+    assert.strictEqual(poster.quantity, 2);
+    assert.strictEqual(poster.unitCents, 6500);
+    const book = wh.describeItem({
+      name: 'Dust & Spurs: Stories of the West',
+      variation_name: 'Hardcover Photo Book · 8 × 11"',
+      quantity: '1',
+      base_price_money: { amount: 7900, currency: 'CAD' },
+      note: '58 pages, landscape',
+    });
+    assert.strictEqual(book.type, 'Hardcover Photo Book');
+    assert.strictEqual(book.size, '8 × 11');
+    assert.strictEqual(book.display, '');
+    assert.strictEqual(book.unitCents, 7900);
   });
 
   await test('alert copy lists the order, the buyer, and Gelato with no em dash', () => {
@@ -526,6 +553,179 @@ async function main() {
     assert.ok(html.includes('phone:document.getElementById(\'cPhone\').value.trim()'));
     assert.ok(html.includes('Phone: ${ship.phone}'));
     assert.ok(html.includes('${ship.phone}'));
+  });
+
+  await test('poster and book lines name the design, display, and price', () => {
+    const alert = wh.buildAlert({
+      order: {
+        id: 'ORDER2',
+        reference_id: 'DS-POST',
+        state: 'OPEN',
+        metadata: { source: 'dustandspurs.ca website' },
+        total_money: { amount: 12800, currency: 'CAD' },
+        total_tax_money: { amount: 0 },
+        line_items: [
+          {
+            name: 'Against the Light',
+            variation_name: 'Fine Art Poster · 12 × 18" · Standard poster',
+            quantity: '1',
+            base_price_money: { amount: 4900, currency: 'CAD' },
+            total_money: { amount: 4900, currency: 'CAD' },
+            note: 'Collection: Ranch Life · Display: Standard poster',
+          },
+          {
+            name: 'Dust & Spurs: Stories of the West',
+            variation_name: 'Hardcover Photo Book · 8 × 11"',
+            quantity: '1',
+            base_price_money: { amount: 7900, currency: 'CAD' },
+            total_money: { amount: 7900, currency: 'CAD' },
+            note: '58 pages, landscape',
+          },
+        ],
+      },
+      payment: { id: 'PAY2', status: 'COMPLETED' },
+    });
+    const text = alert.text;
+    [
+      '1. Against the Light',
+      'Type: Fine Art Poster',
+      'Size: 12 × 18',
+      'Display: Standard poster',
+      'Quantity: 1',
+      'Unit price: CA$49.00',
+      'Line total: CA$49.00',
+      'Collection: Ranch Life',
+      '2. Dust & Spurs: Stories of the West',
+      'Type: Hardcover Photo Book',
+      'Size: 8 × 11',
+      'Unit price: CA$79.00',
+      '58 pages, landscape',
+    ].forEach((line) => assert.ok(text.includes(line), 'missing ' + line));
+    assert.ok(!text.includes('\u2014'));
+    assert.ok(!text.includes('Frame:'));
+  });
+
+  await test('posters and the photo book keep inclusive tax and print prices', async () => {
+    const restore = useEnv({ SITE_URL: 'https://dustandspurs.ca' });
+    const original = global.fetch;
+    let squareTotal = 26900;
+    let captured = null;
+    global.fetch = async (url, opts) => {
+      captured = JSON.parse(opts.body);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          payment_link: { url: 'https://square.link/u/test', order_id: 'ORDER1' },
+          related_resources: { orders: [{ total_money: { amount: squareTotal, currency: 'CAD' } }] },
+        }),
+      };
+    };
+    const ship = {
+      name: 'Alix Dyck',
+      email: 'buyer@example.com',
+      phone: '(306) 555-0199',
+      addr: '1 Main St',
+      city: 'Saskatoon',
+      country: 'Canada',
+      region: 'Saskatchewan',
+      postal: 'S7K 0A1',
+    };
+    const post = (items) => checkout.handler({
+      httpMethod: 'POST',
+      headers: { host: 'dustandspurs.ca' },
+      body: JSON.stringify({ items, ship }),
+    });
+    try {
+      const mixed = await post([
+        { id: 'peace-in-motion', title: 'Tampered name', collection: 'Nope', format: 'poster', display: 'hanging', qty: 1, price: 1 },
+        { id: 'stories-of-the-west', title: 'Tampered book', format: 'book', qty: 1, price: 1 },
+        { title: 'Where They Gather', collection: 'Prairie', tier: 'entry', format: 'print', size: '8x12', qty: 1 },
+      ]);
+      assert.strictEqual(mixed.statusCode, 200);
+      const lines = captured.order.line_items;
+      assert.strictEqual(lines.length, 3);
+      assert.strictEqual(lines[0].name, 'Peace in Motion');
+      assert.strictEqual(lines[0].variation_name, 'Fine Art Poster · 12 × 18" · Hanging poster');
+      assert.strictEqual(lines[0].note, 'Collection: Quiet Presence · Display: Hanging poster');
+      assert.strictEqual(lines[0].base_price_money.amount, 6500);
+      assert.strictEqual(lines[1].name, 'Dust & Spurs: Stories of the West');
+      assert.strictEqual(lines[1].variation_name, 'Hardcover Photo Book · 8 × 11"');
+      assert.strictEqual(lines[1].note, '58 pages, landscape');
+      assert.strictEqual(lines[1].base_price_money.amount, 7900);
+      assert.strictEqual(lines[2].name, 'Where They Gather');
+      assert.strictEqual(lines[2].variation_name, 'Fine Art Print · 8 × 12"');
+      assert.strictEqual(lines[2].base_price_money.amount, 12500);
+      assert.strictEqual(captured.order.taxes[0].type, 'INCLUSIVE');
+      assert.strictEqual(captured.order.service_charges, undefined);
+      squareTotal = 4900;
+      const standard = await post([{ id: 'against-the-light', format: 'poster', display: 'standard', qty: 1 }]);
+      assert.strictEqual(standard.statusCode, 200);
+      assert.strictEqual(captured.order.line_items[0].name, 'Against the Light');
+      assert.strictEqual(captured.order.line_items[0].variation_name, 'Fine Art Poster · 12 × 18" · Standard poster');
+      assert.strictEqual(captured.order.line_items[0].base_price_money.amount, 4900);
+      const badDisplay = await post([{ id: 'rooted', format: 'poster', display: 'framed', qty: 1 }]);
+      assert.strictEqual(badDisplay.statusCode, 400);
+      const unknown = await post([{ id: 'not-a-poster', format: 'poster', display: 'standard', qty: 1 }]);
+      assert.strictEqual(unknown.statusCode, 400);
+      const badBook = await post([{ id: 'western-soul-journal', format: 'book', qty: 1 }]);
+      assert.strictEqual(badBook.statusCode, 400);
+      const quote = await post([{ id: 'kindred', format: 'poster', display: 'standard', qty: 1 }]);
+      const quoted = await checkout.handler({
+        httpMethod: 'POST',
+        headers: { host: 'dustandspurs.ca' },
+        body: JSON.stringify({ items: [{ id: 'kindred', format: 'poster', display: 'standard', qty: 1 }], ship: Object.assign({}, ship, { region: 'Quebec' }) }),
+      });
+      assert.strictEqual(quoted.statusCode, 400);
+      assert.match(JSON.parse(quoted.body).error, /shipping quote/);
+      const framed = await checkout.handler({
+        httpMethod: 'POST',
+        headers: { host: 'dustandspurs.ca' },
+        body: JSON.stringify({
+          items: [{ title: 'Quiet Hour', collection: 'Ranch Light', tier: 'core', format: 'framed', size: '12x18', frame: 'walnut', qty: 1 }],
+          ship,
+        }),
+      });
+      squareTotal = 52500;
+      const framedOk = await checkout.handler({
+        httpMethod: 'POST',
+        headers: { host: 'dustandspurs.ca' },
+        body: JSON.stringify({
+          items: [{ title: 'Quiet Hour', collection: 'Ranch Light', tier: 'core', format: 'framed', size: '12x18', frame: 'walnut', qty: 1 }],
+          ship,
+        }),
+      });
+      assert.strictEqual(framed.statusCode, 502);
+      assert.strictEqual(framedOk.statusCode, 200);
+      assert.strictEqual(captured.order.line_items[0].base_price_money.amount, 52500);
+      assert.strictEqual(captured.order.line_items[0].variation_name, 'Framed Print · 12 × 18" · Walnut frame');
+    } finally {
+      global.fetch = original;
+      restore();
+    }
+  });
+
+  await test('new product pages are linked and their copy has no em dash', () => {
+    const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    assert.ok(html.includes('data-route="posters"'));
+    assert.ok(html.includes('data-route="book"'));
+    assert.ok(html.includes('id="journal"'));
+    assert.ok(html.includes('amazon.ca'));
+    const posters = html.slice(html.indexOf('id="posters"'), html.indexOf('id="book"'));
+    const book = html.slice(html.indexOf('id="book"'), html.indexOf('id="journal"'));
+    assert.ok(posters.includes('Standard Poster, $49'));
+    assert.ok(posters.includes('Hanging Poster, $65'));
+    assert.ok(posters.includes('12 × 18 inches'));
+    assert.ok(posters.includes('200 gsm matte'));
+    assert.ok(book.includes('Stories of the West'));
+    assert.ok(book.includes('58 pages'));
+    assert.ok(book.includes('$79'));
+    assert.ok(book.includes('assets/book/front-cover.jpg'));
+    assert.ok(book.includes('assets/book/back-cover.jpg'));
+    assert.ok(book.includes('Interior spread'));
+    assert.ok(book.indexOf('>Front cover<') < book.indexOf('>Back cover<'));
+    assert.ok(!posters.includes('\u2014') && !book.includes('\u2014'));
+    assert.ok(html.includes("format==='poster')item.display=c.display"));
   });
 
   await test('nodemailer is installed for the SMTP path', () => {
