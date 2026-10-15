@@ -113,7 +113,9 @@ function describeItem(line) {
   const variation = String((line && line.variation_name) || '');
   const parts = variation.split(' · ').map((s) => s.trim()).filter(Boolean);
   let frame = '';
+  let display = '';
   if (parts[2] && /frame/i.test(parts[2])) frame = parts[2].replace(/\s*frame$/i, '').trim();
+  else if (parts[2] && /poster$/i.test(parts[2])) display = parts[2];
   const qty = Math.max(1, parseInt(line && line.quantity, 10) || 1);
   const unit = line && line.base_price_money ? Number(line.base_price_money.amount) : null;
   const lineTotal = line && line.total_money ? Number(line.total_money.amount)
@@ -125,6 +127,7 @@ function describeItem(line) {
     type: parts[0] || '',
     size: parts[1] ? parts[1].replace(/"$/, '') : '',
     frame,
+    display,
     quantity: qty,
     unitCents: Number.isFinite(unit) ? unit : null,
     lineCents: Number.isFinite(lineTotal) ? lineTotal : null,
@@ -211,6 +214,7 @@ function buildAlert({ order, payment }) {
     if (item.type) lines.push('Type: ' + item.type);
     if (item.size) lines.push('Size: ' + item.size);
     if (item.frame) lines.push('Frame: ' + item.frame);
+    if (item.display) lines.push('Display: ' + item.display);
     lines.push('Quantity: ' + item.quantity);
     if (item.unitCents != null) lines.push('Unit price: ' + moneyCAD(item.unitCents));
     if (item.lineCents != null) lines.push('Line total: ' + moneyCAD(item.lineCents));
