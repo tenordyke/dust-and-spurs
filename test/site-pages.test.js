@@ -56,6 +56,9 @@ assert.strictEqual(fs.readFileSync(path.join(__dirname, '..', 'netlify', 'functi
 assert.strictEqual(gifts.includes('Along the Fence Line'), false);
 assert.ok(html.includes("parseHashRoute(location.hash, PAGES)"));
 assert.ok(html.includes('buildAppUrl(location.search, location.hash, r, parts)'));
+assert.ok(html.includes('historyAction(here, next, historyMode)'));
+assert.ok(html.includes("navigate(routeFromHash(), 'replace')"));
+assert.ok(html.includes("navigate(routeFromHash(), 'none')"));
 assert.ok(html.includes("'gifts'"));
 
 assert.ok(html.includes('id="cutoffBanner" hidden'));
