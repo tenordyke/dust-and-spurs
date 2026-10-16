@@ -1324,14 +1324,18 @@ addEventListener('keydown',e=>{
 });
 /* ---- page router. Query strings, including UTM tags, stay on the URL. ---- */
 const PAGES=['home','collections','about','prints','posters','book','journal','gifts','contact','thank-you'];
-let activeRoute='home', pendingGroup=null;
+let activeRoute='home', pendingGroup=null, shownUrl=null;
 function routeFromHash(){
   return parseHashRoute(location.hash, PAGES);
 }
-function navigate(r, parts){
+function navigate(r, historyMode){
+  let parts=[];
   if(r && typeof r==='object'){parts=r.parts||[];r=r.page;}
   parts=parts||[];
+  if(historyMode!=='push'&&historyMode!=='replace'&&historyMode!=='none') historyMode='push';
   if(!PAGES.includes(r)){r='home';parts=[];}
+  const here=location.search+location.hash;
+  if(historyMode==='none' && shownUrl===here) return;
   activeRoute=r;
   document.querySelectorAll('.page-sec').forEach(s=>s.classList.toggle('active',s.dataset.page===r));
   if(r==='thank-you'&&cart.length){cart=[];renderCart();}
@@ -1341,7 +1345,14 @@ function navigate(r, parts){
   if(navToggle) navToggle.setAttribute('aria-expanded','false');
   closeAll();
   if(r==='collections') document.querySelectorAll('#featured .piece').forEach(el=>el.classList.add('in'));
-  try{history.replaceState(null,'',buildAppUrl(location.search, location.hash, r, parts));}catch(e){}
+  const next=buildAppUrl(location.search, location.hash, r, parts);
+  const action=historyAction(here, next, historyMode);
+  if(action!=='none'){
+    ignoreHistory=true;
+    try{ history[action==='push'?'pushState':'replaceState'](null,'',next); }catch(e){}
+    ignoreHistory=false;
+  }
+  shownUrl=location.search+location.hash;
   ga('page_view', {page_title:document.title, page_path:pagePath(r, parts), page_location:location.origin+buildAppUrl(location.search, location.hash, r, parts)});
   if(r==='thank-you'){ try{ sendPurchase(GA_MEASUREMENT_ID, window, r, location.search, location.hash, sessionStorage); }catch(err){} }
   if(r==='book') ga('view_item', ecommerceEvent([{id:'stories-of-the-west',title:'Dust & Spurs: Stories of the West',collection:'Stories of the West',prod:'Hardcover Photo Book',size:'8 × 11"',price:79,qty:1}]));
@@ -1378,10 +1389,10 @@ document.addEventListener('click',function(e){
   const href=a.getAttribute('href')||'';
   if(href.startsWith('#/')){
     e.preventDefault();
-    navigate(parseHashRoute(href, PAGES));
+    navigate(parseHashRoute(href, PAGES), 'push');
     return;
   }
-  if(a.dataset.route){e.preventDefault();navigate(a.dataset.route);}
+  if(a.dataset.route){e.preventDefault();navigate(a.dataset.route, 'push');}
 });
 document.addEventListener('submit',function(e){
   const form=e.target && e.target.closest && e.target.closest('form.signup');
@@ -1411,8 +1422,14 @@ async function submitSignup(form){
     msg.textContent='Signup is unavailable right now. You can email hello@dustandspurs.ca instead.';
   }
 }
-addEventListener('hashchange',()=>navigate(routeFromHash()));
-navigate(routeFromHash());
+let ignoreHistory=false;
+function onTravel(){
+  if(ignoreHistory) return;
+  navigate(routeFromHash(), 'none');
+}
+addEventListener('hashchange', onTravel);
+addEventListener('popstate', onTravel);
+navigate(routeFromHash(), 'replace');
 renderCart();
 </script>
 </body>
