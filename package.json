@@ -3,7 +3,7 @@
   "private": true,
   "description": "Dust & Spurs website. Square checkout and paid-order alerts.",
   "scripts": {
-    "test": "node test/square-webhook.test.js"
+    "test": "node test/square-webhook.test.js && node test/hash-route.test.js && node test/signup.test.js && node test/analytics.test.js && node test/site-pages.test.js"
   },
   "dependencies": {
     "nodemailer": "^10.1.1"
