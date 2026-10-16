@@ -342,10 +342,10 @@
   .questions a:not(.btn){color:var(--sage-deep);text-decoration:underline;text-decoration-color:var(--clay);text-underline-offset:3px;}
   .questions a:not(.btn):hover{color:var(--ink);}
 
-  .gifts-kicker{display:flex;justify-content:center;margin:28px 0 12px;}
-  .welcome .body p.gifts-note{font-family:'Fraunces';font-style:italic;font-size:1.15rem;color:var(--ink);margin:0;}
-  .welcome .body a{color:var(--sage-deep);text-decoration:underline;text-decoration-color:var(--clay);text-underline-offset:3px;}
-  .welcome .body a:hover{color:var(--ink);}
+  .home-gifts{text-align:center;}
+  .home-gifts .lead-in{max-width:46ch;margin:0 auto 22px;color:var(--ink-mut);font-size:1.05rem;}
+  .home-gifts .lead-in a{color:var(--sage-deep);text-decoration:underline;text-decoration-color:var(--clay);text-underline-offset:3px;}
+  .home-gifts .lead-in a:hover{color:var(--ink);}
   .shop-page h2{font-size:clamp(2.1rem,4.2vw,3.2rem);margin:14px 0 8px;}
   .shop-page .lede{font-family:'Fraunces';font-style:italic;font-size:1.2rem;color:var(--ink-mut);margin:0 0 18px;max-width:36ch;}
   .shop-page .copy{max-width:68ch;}
@@ -363,6 +363,7 @@
   .poster-size{font-family:'Space Mono',monospace;font-size:.68rem;letter-spacing:.03em;color:var(--ink);margin:0;}
   .poster-opts{display:flex;flex-wrap:wrap;gap:8px;}
   .poster-card .btn{margin-top:6px;justify-content:center;}
+  .poster-card.lit{outline:3px solid var(--clay);outline-offset:4px;scroll-margin:96px;}
   .book-layout{display:flex;flex-direction:column;align-items:center;gap:clamp(28px,4vw,48px);}
   .book-hero{width:min(860px,100%);}
   .book-copy{width:min(640px,100%);}
@@ -400,14 +401,19 @@
   .cutoff{background:var(--sage-deep);color:var(--bone);text-align:center;padding:12px 20px;}
   .cutoff p{margin:0;font-size:.95rem;}
   .cutoff[hidden]{display:none;}
-  .gift-tier{border-top:1px solid var(--line);padding:28px 0;}
-  .gift-tier h3{font-size:clamp(1.5rem,2.4vw,1.9rem);margin:0 0 8px;}
-  .gift-tier .tier-note{color:var(--ink-mut);margin:0 0 14px;max-width:62ch;}
-  .gift-tier a{color:var(--sage-deep);text-decoration:underline;text-decoration-color:var(--clay);text-underline-offset:3px;}
-  .gift-tier a:hover{color:var(--ink);}
-  .gift-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:8px 28px;}
-  .gift-list span{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:#544C40;margin-left:8px;}
-  @media(max-width:640px){.gift-list{grid-template-columns:1fr;}}
+  .gift-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:8px;}
+  .gift-card{background:var(--bone-2);border:1px solid #0000000d;box-shadow:var(--shadow);padding:12px;display:flex;flex-direction:column;gap:8px;}
+  .gift-photo{margin:0;aspect-ratio:3/2;overflow:hidden;background:var(--dust);}
+  .gift-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+  .gift-photo.portrait img{object-position:center 18%;}
+  .gift-card h3{font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:1.28rem;margin:8px 0 0;}
+  .gift-price{font-family:'Space Mono',monospace;font-size:.72rem;letter-spacing:.04em;margin:0;color:var(--ink);}
+  .gift-card .btn{margin-top:auto;justify-content:center;text-align:center;white-space:normal;line-height:1.45;padding:14px 12px;}
+  .gift-picks{margin:22px 0 0;color:var(--ink-mut);font-size:1rem;}
+  .gift-picks a{color:var(--sage-deep);text-decoration:underline;text-decoration-color:var(--clay);text-underline-offset:3px;}
+  .gift-picks a:hover{color:var(--ink);}
+  @media(max-width:1100px){.gift-grid{grid-template-columns:1fr 1fr;}}
+  @media(max-width:640px){.gift-grid{grid-template-columns:1fr;}}
   .signup{max-width:36rem;margin:8px auto 0;text-align:left;}
   .signup p{margin:0 0 12px;line-height:1.55;}
   .signup label{display:block;margin:12px 0 6px;font-size:.95rem;}
@@ -429,15 +435,15 @@
   <a href="#/home" class="mark" aria-label="Dust and Spurs Western Photography, home"><img class="logo-nav" alt="Dust & Spurs Western Photography" src="img/brand/logo-nav.png" width="1110" height="301"></a>
   <div class="nav-links" id="navlinks">
     <a href="#/home" data-route="home">Home</a>
-    <a href="#/collections" data-route="collections">Collections</a>
     <a href="#/about" data-route="about">About</a>
-    <a href="#/prints" data-route="prints">Print Information</a>
+    <a href="#/collections" data-route="collections">Collections</a>
     <a href="#/posters" data-route="posters">Posters</a>
     <a href="#/book" data-route="book">Book</a>
-    <a href="#/contact" data-route="contact">Contact</a>
     <a href="#/journal" data-route="journal">Journal</a>
     <a href="#/gifts" data-route="gifts">Gifts</a>
     <a href="https://app.squareup.com/gift/ML5W8MYW4D9NW/order" target="_blank" rel="noopener">Gift Cards</a>
+    <a href="#/prints" data-route="prints">Print Information</a>
+    <a href="#/contact" data-route="contact">Contact</a>
     <button class="cart-btn" onclick="openCart()">Cart <span class="count" id="navCount">0</span></button>
   </div>
   <button class="nav-toggle" id="navToggle" onclick="toggleNav()" aria-label="Menu" aria-expanded="false" aria-controls="navlinks">☰</button>
@@ -467,10 +473,15 @@
       <p>Dust &amp; Spurs Western Photography is a collection of fine art photographs inspired by the quiet moments that define the West.</p>
       <p>Rather than chasing spectacle, these images celebrate stillness, trust, texture, light, and the enduring connection between horses and the landscapes they call home. Every photograph is thoughtfully created as artwork for homes, ranches, and spaces where authenticity matters.</p>
       <p>Whether you're a lifelong horse lover or simply drawn to timeless western art, I hope these photographs invite you to slow down, look a little closer, and discover the beauty that often exists in the quietest moments.</p>
-      <p class="gifts-note"><a href="#/gifts">Gifts under $125</a>: <a href="#/posters">posters from $49</a>, the <a href="#/book">Stories of the West photo book at $79</a>, the <a href="#/journal">Western Soul Journal</a>, or an <a href="https://app.squareup.com/gift/ML5W8MYW4D9NW/order" target="_blank" rel="noopener">eGift card</a>.</p>
     </div>
   </div>
 </section>
+
+<section class="section home-gifts page-sec" id="homeGifts" data-page="home"><div class="wrap">
+  <div class="sec-head center"><span class="eyebrow">Gifts under $125</span><h2>Gifts within reach</h2></div>
+  <p class="lead-in">Alix understands that a fine art print isn't within reach for everyone, so she made gifts that are more accessible. The complete collections aren't included here. To view them, <a href="#/collections">explore the Collections</a>.</p>
+  <a href="#/gifts" class="btn btn-solid">See the gifts</a>
+</div></section>
 
 <section class="section featured-works page-sec" data-page="home"><div class="wrap">
   <div class="sec-head center"><span class="eyebrow">From the collection</span><h2>Featured Works</h2>
@@ -688,9 +699,41 @@
   <div class="sec-head">
     <span class="eyebrow">Gift guide</span>
     <h2>Gifts from the West</h2>
-    <p class="note">A guide for October 30. Posters, the photo book, the journal, and an eGift card, grouped by budget.</p>
+    <p class="note">A guide for October 30.</p>
   </div>
-  <div id="giftBudgets"></div>
+  <div class="gift-grid" id="giftGrid">
+    <article class="gift-card">
+      <figure class="gift-photo"><img src="assets/posters/against-the-light.jpg" width="1536" height="1024" alt="Poster mockup of Against the Light, Ranch Life." loading="lazy" decoding="async"></figure>
+      <h3>Standard poster</h3>
+      <p class="gift-price">$49</p>
+      <a class="btn btn-solid" href="#/posters">See the posters</a>
+    </article>
+    <article class="gift-card">
+      <figure class="gift-photo"><img src="assets/posters/kindred.jpg" width="1536" height="1024" alt="Poster mockup of Kindred, Life Among the Herd." loading="lazy" decoding="async"></figure>
+      <h3>Hanging poster</h3>
+      <p class="gift-price">$65</p>
+      <a class="btn btn-solid" href="#/posters/kindred/hanging">See this poster</a>
+    </article>
+    <article class="gift-card">
+      <figure class="gift-photo"><img src="assets/book/front-cover.jpg" width="1536" height="1024" alt="Front cover of Dust &amp; Spurs: Stories of the West." loading="lazy" decoding="async"></figure>
+      <h3>Stories of the West</h3>
+      <p class="gift-price">$79</p>
+      <a class="btn btn-solid" href="#/book">View the book</a>
+    </article>
+    <article class="gift-card">
+      <figure class="gift-photo portrait"><img src="assets/journal/alix-holding.jpg" width="1024" height="1536" alt="Alix holding the Western Soul Journal." loading="lazy" decoding="async"></figure>
+      <h3>Western Soul Journal</h3>
+      <p class="gift-price">Paperback on Amazon.ca</p>
+      <a class="btn btn-solid" href="#/journal">View the journal</a>
+    </article>
+    <article class="gift-card">
+      <figure class="gift-photo"><img src="assets/og/dust-and-spurs.jpg" width="1200" height="630" alt="Three horses at a trough, the photograph used for the Dust &amp; Spurs eGift card." loading="lazy" decoding="async"></figure>
+      <h3>eGift card</h3>
+      <p class="gift-price">Any amount</p>
+      <a class="btn btn-solid" href="https://app.squareup.com/gift/ML5W8MYW4D9NW/order" target="_blank" rel="noopener">Send an eGift card</a>
+    </article>
+  </div>
+  <p class="gift-picks">A few posters to start with: <a href="#/posters/against-the-light">Against the Light</a>, <a href="#/posters/kindred">Kindred</a>, and <a href="#/posters/prairie-watcher">Prairie Watcher</a>.</p>
   <div class="gifts-signup">
     <h3>A note when something new is ready</h3>
     <form class="signup" novalidate>
@@ -1101,17 +1144,6 @@ function addBook(){
   renderCart(); openCart();
 }
 renderPosters();
-function renderGifts(){
-  const box=document.getElementById('giftBudgets');
-  if(!box) return;
-  const item=(p,suffix)=>`<li><a href="#/posters/${p.id}${suffix}">${p.title}</a> <span>${p.collection}</span></li>`;
-  box.innerHTML=`<article class="gift-tier"><h3>$49</h3><p class="tier-note">Standard poster, 12 × 18 in, unframed.</p><ul class="gift-list">${POSTERS.map(p=>item(p,'')).join('')}</ul></article>
-    <article class="gift-tier"><h3>$65</h3><p class="tier-note">Hanging poster, with pine magnetic hangers.</p><ul class="gift-list">${POSTERS.map(p=>item(p,'/hanging')).join('')}</ul></article>
-    <article class="gift-tier"><h3>$79</h3><p class="tier-note">Hardcover photo book. The price includes applicable taxes and standard shipping within eligible Canadian destinations.</p><p><a href="#/book">Stories of the West</a></p></article>
-    <article class="gift-tier"><h3>The journal</h3><p class="tier-note">Paperback on Amazon.ca. Amazon sets the price.</p><p><a href="#/journal">Western Soul Journal</a></p></article>
-    <article class="gift-tier"><h3>eGift card</h3><p class="tier-note">Any amount, sent by Square.</p><p><a href="https://app.squareup.com/gift/ML5W8MYW4D9NW/order" target="_blank" rel="noopener">Dust &amp; Spurs eGift card</a></p></article>`;
-}
-renderGifts();
 function addToCart(){
   if(selProd==='framed'&&!FRAMES[selFrame]){document.getElementById('frameErr').hidden=false;return;}
   const price=PRICE[selProd][selSize];
@@ -1310,17 +1342,21 @@ function navigate(r, parts){
   ga('page_view', {page_title:document.title, page_path:pagePath(r, parts), page_location:location.origin+buildAppUrl(location.search, location.hash, r, parts)});
   if(r==='thank-you'){ try{ sendPurchase(GA_MEASUREMENT_ID, window, r, location.search, location.hash, sessionStorage); }catch(err){} }
   if(r==='book') ga('view_item', ecommerceEvent([{id:'stories-of-the-west',title:'Dust & Spurs: Stories of the West',collection:'Stories of the West',prod:'Hardcover Photo Book',size:'8 × 11"',price:79,qty:1}]));
+  document.querySelectorAll('.poster-card.lit').forEach(el=>el.classList.remove('lit'));
   if(r==='posters' && parts[0]){
     const id=decodeURIComponent(parts[0]);
-    const display=parts[1]==='hanging'||parts[1]==='standard'?parts[1]:'';
-    if(display && POSTERS.some(p=>p.id===id)) pickPoster(id, display);
+    const display=parts[1]==='hanging'||parts[1]==='standard'?parts[1]:'standard';
+    if(POSTERS.some(p=>p.id===id)) pickPoster(id, display);
     const poster=POSTERS.find(p=>p.id===id);
     if(poster){
-      const shown=display||'standard';
-      ga('view_item', ecommerceEvent([{id:poster.id,title:poster.title,collection:poster.collection,prod:'Fine Art Poster',size:'12 × 18"',displayLabel:shown==='hanging'?'Hanging poster':'Standard poster',price:shown==='hanging'?65:49,qty:1}]));
+      ga('view_item', ecommerceEvent([{id:poster.id,title:poster.title,collection:poster.collection,prod:'Fine Art Poster',size:'12 × 18"',displayLabel:display==='hanging'?'Hanging poster':'Standard poster',price:display==='hanging'?65:49,qty:1}]));
     }
     const card=document.querySelector('[data-poster="'+id.replace(/"/g,'')+'"]');
-    if(card){requestAnimationFrame(()=>card.scrollIntoView({behavior:'smooth',block:'center'}));return;}
+    if(card){
+      card.classList.add('lit');
+      requestAnimationFrame(()=>card.scrollIntoView({behavior:'auto',block:'center'}));
+      return;
+    }
   }
   if(pendingGroup){
     const g=document.getElementById(pendingGroup);pendingGroup=null;
