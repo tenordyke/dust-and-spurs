@@ -37,6 +37,22 @@ assert.ok(html.includes('/.netlify/functions/signup'));
 assert.strictEqual(html.includes('\u2014'), false);
 assert.strictEqual(fs.readFileSync(path.join(__dirname, '..', 'netlify', 'functions', 'signup.js'), 'utf8').includes('\u2014'), false);
 
+const analyticsJs = fs.readFileSync(path.join(__dirname, '..', 'lib', 'analytics.js'), 'utf8');
+assert.strictEqual(analyticsJs.includes('\u2014'), false);
+assert.strictEqual((html.match(/const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX';/g) || []).length, 1);
+assert.strictEqual(html.includes('src="https://www.googletagmanager.com'), false);
+assert.ok(html.includes('installAnalytics(GA_MEASUREMENT_ID)'));
+assert.ok(html.includes("ga('page_view'"));
+assert.ok(html.includes("ga('view_item'"));
+assert.ok(html.includes("ga('add_to_cart'"));
+assert.ok(html.includes("ga('begin_checkout'"));
+assert.ok(html.includes("sendPurchase(GA_MEASUREMENT_ID, window, r, location.search, location.hash, sessionStorage)"));
+assert.ok(html.includes('Your IP address is anonymized.'));
+assert.ok(html.includes('These cookies are not used for ads.'));
+assert.ok(analyticsJs.includes('anonymize_ip: true'));
+assert.ok(analyticsJs.includes('allow_google_signals: false'));
+assert.ok(analyticsJs.includes('allow_ad_personalization_signals: false'));
+
 const prints = fs.readdirSync(path.join(__dirname, '..', 'img', 'prints'));
 assert.ok(prints.includes('where-they-gather.jpg'));
 assert.ok(prints.includes('where-they-gather.webp'));

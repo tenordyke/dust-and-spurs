@@ -194,6 +194,7 @@
   .foot-links{margin-top:22px;display:flex;justify-content:center;flex-wrap:wrap;gap:8px 22px;}
   .foot-links a{font-family:'Space Mono';font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dust);}
   .foot-links a:hover{color:var(--bone);}
+  footer .analytics-note{margin:22px auto 0;max-width:46ch;font-size:.78rem;line-height:1.55;}
   .foot-base{margin-top:30px;padding-top:20px;border-top:1px solid #ffffff1a;font-family:'Space Mono';
     font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:#9c9280;}
 
@@ -739,6 +740,7 @@
     <button type="submit" class="btn btn-solid">Join the list</button>
     <p class="signup-msg" role="status"></p>
   </form>
+  <p class="analytics-note">This site uses Google Analytics to see which pages are visited. Your IP address is anonymized. These cookies are not used for ads.</p>
   <div class="foot-base">© Dust &amp; Spurs Western Photography</div>
 </div></footer>
 
@@ -846,7 +848,14 @@
 </div></div>
 
 <script src="/lib/hash-route.js"></script>
+<script src="/lib/analytics.js"></script>
 <script>
+/* Placeholder until the real GA4 measurement ID is pasted here. The placeholder sends nothing. */
+const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX';
+installAnalytics(GA_MEASUREMENT_ID);
+function ga(eventName, params){
+  return trackEvent(GA_MEASUREMENT_ID, window, eventName, params);
+}
 /* ===== Product model, from "Dust & Spurs Pricing Tiers & Products". Retail price is by format × size; the tier controls which sizes a photograph is offered in. ===== */
 const PRODUCTS = {print:'Fine Art Print', framed:'Framed Print', canvas:'Gallery Wrapped Canvas'};
 const PRICE = {
@@ -985,6 +994,7 @@ function openModal(id, opener){
   document.getElementById('modalMed').textContent="Archival fine art print, produced to order from Alix's original photograph.";
   document.getElementById('modalDesc').textContent=current.desc;
   renderTabs();renderSizes();renderFrames();
+  ga('view_item', ecommerceEvent([{id:current.id,title:current.title,collection:current.collection,prod:PRODUCTS[selProd],size:sizeLabel(selSize),price:PRICE[selProd][selSize],qty:1}]));
   const modal=document.getElementById('modal');
   modal.inert=false;
   modal.classList.add('open');
@@ -1079,6 +1089,7 @@ function addPoster(id){
   const found=cart.find(c=>c.key===key);
   if(found) found.qty++;
   else cart.push({key,id,format:'poster',display,title:p.title,collection:p.collection,prod:'Fine Art Poster',displayLabel,size:'12 × 18"',price,qty:1,image:p.image});
+  ga('add_to_cart', ecommerceEvent([{id:p.id,title:p.title,collection:p.collection,prod:'Fine Art Poster',size:'12 × 18"',displayLabel:displayLabel,price:price,qty:1}]));
   renderCart(); openCart();
 }
 function addBook(){
@@ -1086,6 +1097,7 @@ function addBook(){
   const found=cart.find(c=>c.key===key);
   if(found) found.qty++;
   else cart.push({key,id:key,format:'book',title:'Dust & Spurs: Stories of the West',collection:'Stories of the West',prod:'Hardcover Photo Book',size:'8 × 11"',price:79,qty:1,image:'assets/book/front-cover.jpg'});
+  ga('add_to_cart', ecommerceEvent([{id:key,title:'Dust & Spurs: Stories of the West',collection:'Stories of the West',prod:'Hardcover Photo Book',size:'8 × 11"',price:79,qty:1}]));
   renderCart(); openCart();
 }
 renderPosters();
@@ -1108,6 +1120,7 @@ function addToCart(){
   const found=cart.find(c=>c.key===key);
   if(found)found.qty++;
   else cart.push({key,id:current.id,tier:current.tier,format:selProd,sizeKey:selSize,frame,title:current.title,collection:current.collection,prod:PRODUCTS[selProd],size:sizeLabel(selSize),price,qty:1,grad:current.grad,image:current.image});
+  ga('add_to_cart', ecommerceEvent([{id:current.id,title:current.title,collection:current.collection,prod:PRODUCTS[selProd],size:sizeLabel(selSize),frameLabel:frame?framePhrase(frame):'',price:price,qty:1}]));
   renderCart();closeModal();openCart();
 }
 function renderCart(){
@@ -1150,7 +1163,15 @@ function showView(v){
   const b=document.querySelector('#cart .cart-view.on .cv-body')||document.querySelector('#cart .cart-view.on .cart-items');
   if(b) b.scrollTop=0;
 }
-function goCheckout(){ if(!cart.length) return; document.getElementById('shipErr').textContent=''; showView('ship'); }
+function cartLines(){
+  return cart.map(c=>({id:c.id,title:c.title,collection:c.collection,prod:c.prod,size:c.size,displayLabel:c.displayLabel||'',frameLabel:c.frame?framePhrase(c.frame):'',price:c.price,qty:c.qty}));
+}
+function goCheckout(){
+  if(!cart.length) return;
+  document.getElementById('shipErr').textContent='';
+  ga('begin_checkout', ecommerceEvent(cartLines()));
+  showView('ship');
+}
 function onCountry(){
   const ca=document.getElementById('cCountry').value==='Canada';
   document.getElementById('provWrap').hidden=!ca;
@@ -1209,6 +1230,7 @@ async function payNow(){
       body:JSON.stringify({items:cart.map(c=>{const item={id:c.id,title:c.title,collection:c.collection,format:c.format,qty:c.qty};if(c.format==='poster')item.display=c.display;else if(c.format==='book')item.size='8x11';else{item.tier=c.tier;item.size=c.sizeKey;if(c.frame)item.frame=c.frame;}return item;}),ship})});
     const d=await r.json().catch(()=>({}));
     if(!r.ok||!d.url) throw new Error(d.error||'Checkout is unavailable right now.');
+    try{ savePendingCheckout(sessionStorage, pendingCheckout(d, cartLines())); }catch(err){}
     window.location.href=d.url;   /* Square-hosted secure checkout (cards, Apple Pay, Google Pay) */
     return;
   }catch(e){
@@ -1285,10 +1307,18 @@ function navigate(r, parts){
   closeAll();
   if(r==='collections') document.querySelectorAll('#featured .piece').forEach(el=>el.classList.add('in'));
   try{history.replaceState(null,'',buildAppUrl(location.search, location.hash, r, parts));}catch(e){}
+  ga('page_view', {page_title:document.title, page_path:pagePath(r, parts), page_location:location.origin+buildAppUrl(location.search, location.hash, r, parts)});
+  if(r==='thank-you'){ try{ sendPurchase(GA_MEASUREMENT_ID, window, r, location.search, location.hash, sessionStorage); }catch(err){} }
+  if(r==='book') ga('view_item', ecommerceEvent([{id:'stories-of-the-west',title:'Dust & Spurs: Stories of the West',collection:'Stories of the West',prod:'Hardcover Photo Book',size:'8 × 11"',price:79,qty:1}]));
   if(r==='posters' && parts[0]){
     const id=decodeURIComponent(parts[0]);
     const display=parts[1]==='hanging'||parts[1]==='standard'?parts[1]:'';
     if(display && POSTERS.some(p=>p.id===id)) pickPoster(id, display);
+    const poster=POSTERS.find(p=>p.id===id);
+    if(poster){
+      const shown=display||'standard';
+      ga('view_item', ecommerceEvent([{id:poster.id,title:poster.title,collection:poster.collection,prod:'Fine Art Poster',size:'12 × 18"',displayLabel:shown==='hanging'?'Hanging poster':'Standard poster',price:shown==='hanging'?65:49,qty:1}]));
+    }
     const card=document.querySelector('[data-poster="'+id.replace(/"/g,'')+'"]');
     if(card){requestAnimationFrame(()=>card.scrollIntoView({behavior:'smooth',block:'center'}));return;}
   }
