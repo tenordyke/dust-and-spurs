@@ -16,9 +16,44 @@ assert.ok(toml.includes('/img/*'));
 assert.ok(toml.includes('max-age=31536000'));
 
 assert.ok(html.includes('data-page="gifts"'));
-assert.ok(html.includes('id="giftBudgets"'));
+assert.ok(html.includes('id="giftGrid"'));
 assert.ok(html.includes('A guide for October 30.'));
-assert.ok(html.includes('#/posters/${p.id}${suffix}'));
+assert.strictEqual(html.includes('#/posters/${p.id}${suffix}'), false);
+assert.strictEqual(html.includes('class="gift-list"'), false);
+assert.ok(html.includes('href="#/posters/against-the-light"'));
+assert.ok(html.includes('href="#/posters/kindred/hanging"'));
+assert.ok(html.includes('href="#/posters/prairie-watcher"'));
+assert.ok(html.includes("card.classList.add('lit')"));
+assert.ok(html.includes('.poster-card.lit'));
+
+const nav = html.slice(html.indexOf('id="navlinks"'), html.indexOf('id="navToggle"'));
+const navLabels = [...nav.matchAll(/>([^<]+)<\/a>/g)].map((match) => match[1]);
+assert.deepStrictEqual(navLabels, ['Home', 'About', 'Collections', 'Posters', 'Book', 'Journal', 'Gifts', 'Gift Cards', 'Print Information', 'Contact']);
+
+const welcome = html.slice(html.indexOf('class="section welcome'), html.indexOf('id="homeGifts"'));
+assert.strictEqual(welcome.includes('Gifts under $125'), false);
+assert.ok(html.includes("a fine art print isn't within reach for everyone"));
+assert.ok(html.includes('href="#/collections">explore the Collections</a>'));
+
+const gifts = html.slice(html.indexOf('id="gifts"'), html.indexOf('id="contact"'));
+assert.ok(gifts.includes('assets/posters/against-the-light.jpg'));
+assert.ok(gifts.includes('assets/posters/kindred.jpg'));
+assert.ok(gifts.includes('assets/book/front-cover.jpg'));
+assert.ok(gifts.includes('assets/journal/alix-holding.jpg'));
+assert.ok(gifts.includes('assets/gifts/egift-card.png'));
+assert.strictEqual(gifts.includes('assets/og/dust-and-spurs.jpg'), false);
+assert.ok(gifts.includes('Hangers are not pictured.'));
+assert.ok(gifts.includes('>Standard poster</h3>'));
+assert.ok(gifts.includes('>Hanging poster</h3>'));
+assert.ok(gifts.includes('>$49</p>'));
+assert.ok(gifts.includes('>$65</p>'));
+assert.ok(gifts.includes('>$79</p>'));
+const amazonPrice = 'Paperback, $15.22 on Amazon.ca (price set by Amazon, may change)';
+assert.ok(gifts.includes(amazonPrice));
+const journal = html.slice(html.indexOf('id="journal"'), html.indexOf('id="gifts"'));
+assert.ok(journal.includes(amazonPrice));
+assert.strictEqual(fs.readFileSync(path.join(__dirname, '..', 'netlify', 'functions', 'checkout.js'), 'utf8').includes('15.22'), false);
+assert.strictEqual(gifts.includes('Along the Fence Line'), false);
 assert.ok(html.includes("parseHashRoute(location.hash, PAGES)"));
 assert.ok(html.includes('buildAppUrl(location.search, location.hash, r, parts)'));
 assert.ok(html.includes("'gifts'"));
