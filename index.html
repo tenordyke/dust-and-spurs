@@ -787,7 +787,7 @@
     <button type="submit" class="btn btn-solid">Join the list</button>
     <p class="signup-msg" role="status"></p>
   </form>
-  <p class="analytics-note">This site uses Google Analytics to see which pages are visited. Your IP address is anonymized. These cookies are not used for ads.</p>
+  <p class="analytics-note">This site uses Google Analytics to measure site visits. Your IP address is anonymized. These cookies are not used for ads.</p>
   <div class="foot-base">© Dust &amp; Spurs Western Photography</div>
 </div></footer>
 
@@ -897,9 +897,9 @@
 <script src="/lib/hash-route.js"></script>
 <script src="/lib/analytics.js"></script>
 <script>
-/* Placeholder until the real GA4 measurement ID is pasted here. The placeholder sends nothing. */
-const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX';
-installAnalytics(GA_MEASUREMENT_ID);
+/* Real GA4 measurement ID. The placeholder G-XXXXXXXXXX would send nothing. */
+const GA_MEASUREMENT_ID = 'G-NTS2KXFME7';
+installAnalytics(GA_MEASUREMENT_ID, document);
 function ga(eventName, params){
   return trackEvent(GA_MEASUREMENT_ID, window, eventName, params);
 }

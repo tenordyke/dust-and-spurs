@@ -77,9 +77,11 @@ assert.strictEqual(fs.readFileSync(path.join(__dirname, '..', 'netlify', 'functi
 
 const analyticsJs = fs.readFileSync(path.join(__dirname, '..', 'lib', 'analytics.js'), 'utf8');
 assert.strictEqual(analyticsJs.includes('\u2014'), false);
-assert.strictEqual((html.match(/const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX';/g) || []).length, 1);
+assert.strictEqual((html.match(/const GA_MEASUREMENT_ID = 'G-NTS2KXFME7';/g) || []).length, 1);
+assert.strictEqual(html.includes("const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX'"), false);
+assert.ok(html.includes('Google Analytics to measure site visits.'));
 assert.strictEqual(html.includes('src="https://www.googletagmanager.com'), false);
-assert.ok(html.includes('installAnalytics(GA_MEASUREMENT_ID)'));
+assert.ok(html.includes('installAnalytics(GA_MEASUREMENT_ID, document)'));
 assert.ok(html.includes("ga('page_view'"));
 assert.ok(html.includes("ga('view_item'"));
 assert.ok(html.includes("ga('add_to_cart'"));
