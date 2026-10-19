@@ -486,7 +486,7 @@ async function main() {
     } finally { net.restore(); restore(); }
   });
 
-  await test('checkout requires a phone and prefills Square shipping', async () => {
+  await test('checkout prefills Square shipping and treats phone as optional', async () => {
     const restore = useEnv({ SITE_URL: 'https://dustandspurs.ca' });
     const original = global.fetch;
     let captured = null;
@@ -518,8 +518,9 @@ async function main() {
         headers: { host: 'dustandspurs.ca' },
         body: JSON.stringify({ items, ship: Object.assign({}, ship, { phone: '' }) }),
       });
-      assert.strictEqual(missing.statusCode, 400);
-      assert.strictEqual(captured, null);
+      assert.strictEqual(missing.statusCode, 200);
+      assert.strictEqual(captured.pre_populated_data.buyer_phone_number, undefined);
+      assert.strictEqual(captured.order.metadata.customer_phone, undefined);
       const bad = await checkout.handler({
         httpMethod: 'POST',
         headers: { host: 'dustandspurs.ca' },
@@ -534,6 +535,27 @@ async function main() {
       assert.strictEqual(ok.statusCode, 200);
       assert.strictEqual(captured.pre_populated_data.buyer_phone_number, '+13065550199');
       assert.strictEqual(captured.pre_populated_data.buyer_address.address_line_1, '1 Main St');
+      const withUnit = await checkout.handler({
+        httpMethod: 'POST',
+        headers: { host: 'dustandspurs.ca' },
+        body: JSON.stringify({ items, ship: Object.assign({}, ship, { unit: 'Suite 4' }) }),
+      });
+      assert.strictEqual(withUnit.statusCode, 200);
+      assert.strictEqual(captured.pre_populated_data.buyer_address.address_line_2, 'Suite 4');
+      assert.strictEqual(captured.order.metadata.ship_unit, 'Suite 4');
+      assert.ok(captured.order.metadata.ship_to.includes('Suite 4'));
+      const unitAlert = wh.buildAlert({
+        order: {
+          id: 'ORDERUNIT',
+          reference_id: 'DS-UNIT',
+          metadata: { ship_unit: 'Suite 4', customer_phone: '' },
+          total_money: { amount: 12500, currency: 'CAD' },
+          total_tax_money: { amount: 0 },
+          line_items: [],
+        },
+        payment: { shipping_address: { address_line_1: '1 Main St', locality: 'Saskatoon', administrative_district_level_1: 'SK', postal_code: 'S7K 0A1', country: 'CA' } },
+      });
+      assert.ok(unitAlert.text.includes('Suite 4'));
       assert.strictEqual(captured.pre_populated_data.buyer_address.country, 'CA');
       assert.strictEqual(captured.checkout_options.ask_for_shipping_address, true);
       assert.strictEqual(captured.order.metadata.customer_phone, '(306) 555-0199');
@@ -549,7 +571,9 @@ async function main() {
 
   await test('the shipping form collects a phone for pay and quote', () => {
     const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    assert.ok(html.includes('Phone (optional, only used for delivery questions)'));
     assert.ok(html.includes('id="cPhone"'));
+    assert.ok(html.includes('id="cUnit"'));
     assert.ok(html.includes('phone:document.getElementById(\'cPhone\').value.trim()'));
     assert.ok(html.includes('Phone: ${ship.phone}'));
     assert.ok(html.includes('${ship.phone}'));
@@ -678,6 +702,13 @@ async function main() {
       });
       assert.strictEqual(quoted.statusCode, 400);
       assert.match(JSON.parse(quoted.body).error, /shipping quote/);
+      const nunavut = await checkout.handler({
+        httpMethod: 'POST',
+        headers: { host: 'dustandspurs.ca' },
+        body: JSON.stringify({ items: [{ id: 'kindred', format: 'poster', display: 'standard', qty: 1 }], ship: Object.assign({}, ship, { region: 'Nunavut' }) }),
+      });
+      assert.strictEqual(nunavut.statusCode, 400);
+      assert.match(JSON.parse(nunavut.body).error, /shipping quote/);
       const framed = await checkout.handler({
         httpMethod: 'POST',
         headers: { host: 'dustandspurs.ca' },
