@@ -174,10 +174,15 @@ function personName(recipient, payment, meta) {
 
 function addressLines(recipient, payment, meta) {
   const addr = (recipient && recipient.address) || (payment && payment.shipping_address) || null;
-  if (!addr) return (meta && meta.ship_to) ? [meta.ship_to] : [];
+  const unit = meta && meta.ship_unit ? String(meta.ship_unit).replace(/[\r\n]/g, ' ').trim() : '';
+  if (!addr) {
+    if (meta && meta.ship_to) return [meta.ship_to];
+    return unit ? [unit] : [];
+  }
   const lines = [];
   if (addr.address_line_1) lines.push(addr.address_line_1);
   if (addr.address_line_2) lines.push(addr.address_line_2);
+  else if (unit && lines.every(function (line) { return line.indexOf(unit) === -1; })) lines.push(unit);
   const city = [addr.locality, addr.administrative_district_level_1].filter(Boolean).join(', ');
   const cityLine = [city, addr.postal_code].filter(Boolean).join(' ');
   if (cityLine) lines.push(cityLine);

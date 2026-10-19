@@ -44,7 +44,7 @@ const POSTERS = {
 const BOOK_PRICE = 79;
 
 // ---- Shipping rules (keep in sync with the website) ----
-const QUOTE_PROVINCES = ['Quebec','Yukon','Northwest Territories'];
+const QUOTE_PROVINCES = ['Quebec','Yukon','Northwest Territories','Nunavut'];
 const QUOTE_COUNTRIES = ['United States'];
 const PROV = {'Alberta':'AB','British Columbia':'BC','Manitoba':'MB','New Brunswick':'NB','Newfoundland and Labrador':'NL',
   'Northwest Territories':'NT','Nova Scotia':'NS','Nunavut':'NU','Ontario':'ON','Prince Edward Island':'PE','Quebec':'QC',
@@ -95,8 +95,12 @@ exports.handler = async (event) => {
   const need = ['name','email','addr','city','country','region','postal'].filter(k => !clean(ship[k]));
   if (need.length) return json(400, {error:'Missing shipping details: '+need.join(', ')});
   if (!/.+@.+\..+/.test(ship.email)) return json(400, {error:'Please enter a valid email address.'});
+  // Square's hosted checkout collects a phone on its own page. This field only prefills that page.
+  // A blank number is fine. A partial number is rejected so Square does not receive an invalid E.164 value.
+  const phoneText = clean(ship.phone, 40);
   const buyerPhone = normalizePhone(ship.phone);
-  if (!buyerPhone) return json(400, {error:'Please enter a phone number we can reach you at.'});
+  if (phoneText && !buyerPhone) return json(400, {error:'Please enter a phone number we can reach you at.'});
+  const unit = clean(ship.unit, 80);
   if (QUOTE_COUNTRIES.includes(ship.country) || (ship.country==='Canada' && QUOTE_PROVINCES.includes(ship.region)))
     return json(400, {error:'This destination requires a shipping quote before payment.'});
   if (ship.country !== 'Canada') return json(400, {error:'Unsupported destination.'});
@@ -157,9 +161,10 @@ exports.handler = async (event) => {
       taxes,
       metadata: {
         ship_to_name: clean(ship.name, 255),
-        ship_to: clean(`${ship.addr}, ${ship.city}, ${ship.region}, ${ship.country} ${ship.postal}`, 255),
+        ship_to: clean(`${unit ? clean(ship.addr) + ', ' + unit : clean(ship.addr)}, ${ship.city}, ${ship.region}, ${ship.country} ${ship.postal}`, 255),
         customer_email: clean(ship.email, 255),
-        customer_phone: clean(ship.phone, 40),
+        ...(phoneText ? { customer_phone: phoneText } : {}),
+        ...(unit ? { ship_unit: unit } : {}),
         source: 'dustandspurs.ca website',
       },
     },
@@ -172,11 +177,12 @@ exports.handler = async (event) => {
     },
     pre_populated_data: {
       buyer_email: clean(ship.email),
-      buyer_phone_number: buyerPhone,
+      ...(buyerPhone ? { buyer_phone_number: buyerPhone } : {}),
       buyer_address: {
         first_name: nameParts[0] || '',
         last_name: nameParts.slice(1).join(' ') || '',
         address_line_1: clean(ship.addr),
+        ...(unit ? { address_line_2: unit } : {}),
         locality: clean(ship.city),
         administrative_district_level_1: PROV[ship.region] || clean(ship.region),
         postal_code: clean(ship.postal, 20),

@@ -313,6 +313,7 @@
   .cart-view.on{display:flex;}
   .cv-body{flex:1;overflow-y:auto;padding:16px 26px;}
   .cv-body label{display:block;font-family:'Space Mono';font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mut);margin:15px 0 6px;}
+  .cv-body label.quiet{font-family:'Work Sans',sans-serif;font-size:.88rem;letter-spacing:0;text-transform:none;line-height:1.45;}
   .cv-body input,.cv-body select{width:100%;background:var(--bone-2);border:1px solid var(--dust);border-radius:8px;padding:11px 12px;font-family:'Work Sans';font-size:.95rem;color:var(--ink);box-sizing:border-box;}
   .cv-body input:focus,.cv-body select:focus{outline:none;border-color:var(--btn);}
   .cv-err{color:#6E4528;font-size:.82rem;margin-top:12px;min-height:1em;}
@@ -345,8 +346,10 @@
 
   .home-gifts{text-align:center;}
   .home-gifts .lead-in{max-width:46ch;margin:0 auto 22px;color:var(--ink-mut);font-size:1.05rem;}
-  .home-gifts .lead-in a{color:var(--sage-deep);text-decoration:underline;text-decoration-color:var(--clay);text-underline-offset:3px;}
-  .home-gifts .lead-in a:hover{color:var(--ink);}
+  .home-gift-list{list-style:none;margin:0 auto 26px;padding:0;max-width:38rem;}
+  .home-gift-list li{margin:0 0 10px;}
+  .home-gift-list a{font-family:'Fraunces',Georgia,serif;font-size:1.12rem;color:var(--ink);}
+  .home-gift-list a:hover{color:var(--sage);}
   .shop-page h2{font-size:clamp(2.1rem,4.2vw,3.2rem);margin:14px 0 8px;}
   .shop-page .lede{font-family:'Fraunces';font-style:italic;font-size:1.2rem;color:var(--ink-mut);margin:0 0 18px;max-width:36ch;}
   .shop-page .copy{max-width:68ch;}
@@ -409,12 +412,18 @@
   .cutoff .cutoff-note{margin-top:16px;font-size:.82rem;line-height:1.55;color:var(--dust);max-width:68ch;}
   .cutoff[hidden]{display:none;}
   @media(max-width:560px){.cutoff li{grid-template-columns:1fr;gap:2px;}}
+  .cutoff-slim{background:var(--sage-deep);color:var(--bone);}
+  .cutoff-slim .wrap{display:flex;align-items:center;justify-content:center;gap:12px 16px;min-height:48px;padding:8px 0;}
+  .cutoff-slim p{margin:0;font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:1.02rem;color:var(--bone);}
+  .cutoff-slim button{background:transparent;color:var(--bone);border:1px solid #e8e1d366;font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;padding:8px 12px;cursor:pointer;}
+  .cutoff-slim button:hover{border-color:var(--bone);}
+  .cutoff-slim[hidden]{display:none;}
   .gift-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:8px;}
   .gift-card{background:var(--bone-2);border:1px solid #0000000d;box-shadow:var(--shadow);padding:12px;display:flex;flex-direction:column;gap:8px;}
   .gift-photo{margin:0;aspect-ratio:3/2;overflow:hidden;background:var(--dust);}
   .gift-photo img{width:100%;height:100%;object-fit:cover;display:block;}
   .gift-photo.portrait img{object-position:center 18%;}
-  .gift-card h3{font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:1.28rem;margin:8px 0 0;}
+  .gift-card h3{font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:1.2rem;line-height:1.2;margin:8px 0 0;}
   .gift-price{font-family:'Space Mono',monospace;font-size:.72rem;letter-spacing:.04em;margin:0;color:var(--ink);}
   .gift-price.amazon{font-family:'Work Sans',sans-serif;font-size:.92rem;letter-spacing:0;line-height:1.45;}
   .gift-note{margin:0;color:var(--ink-mut);font-size:.88rem;line-height:1.4;}
@@ -458,20 +467,13 @@
   </div>
   <button class="nav-toggle" id="navToggle" onclick="toggleNav()" aria-label="Menu" aria-expanded="false" aria-controls="navlinks">☰</button>
 </div></nav>
-<!-- Christmas 2026 ordering notice. Add hidden to #cutoffBanner to hide it after the season. -->
-<div class="cutoff" id="cutoffBanner">
+<div class="cutoff-slim" id="cutoffBar" hidden>
   <div class="wrap">
-    <p class="cutoff-title">Christmas 2026 Ordering Deadlines</p>
-    <p class="cutoff-intro">Planning to give a little piece of the West this Christmas?</p>
-    <p>To give your Dust &amp; Spurs order the best chance of arriving in time for Christmas, please place your order by the following dates:</p>
-    <ul>
-      <li><span>December 1</span> Fine Art Prints, Framed Fine Art Prints, Canvas Prints</li>
-      <li><span>December 12</span> Dust &amp; Spurs: Stories of the West Hardcover Photography Book</li>
-      <li><span>December 14</span> Fine Art Posters, Hanging Posters</li>
-    </ul>
-    <p class="cutoff-note">These deadlines apply to orders shipped within Canada using standard shipping. Delivery times are estimates and may vary depending on location, production requirements, and holiday shipping conditions. Christmas delivery cannot be guaranteed.</p>
+    <p>Christmas order-by dates</p>
+    <button type="button" id="cutoffToggle" aria-expanded="false" aria-controls="cutoffBanner">Show dates</button>
   </div>
 </div>
+<div id="cutoffDock"></div>
 
 <header class="hero page-sec" id="top" data-page="home"><div class="wrap">
   <span class="eyebrow">Fine Art Western Photography</span>
@@ -487,6 +489,36 @@
   </div>
 </div></header>
 
+<!-- Christmas 2026 ordering notice. Add hidden to #cutoffBanner to hide it by hand. It also hides on its own after December 25, 2026 (America/Regina). -->
+<div id="cutoffHomeSlot">
+<div class="cutoff" id="cutoffBanner">
+  <div class="wrap">
+    <p class="cutoff-title">Christmas 2026 Ordering Deadlines</p>
+    <p class="cutoff-intro">Planning to give a little piece of the West this Christmas?</p>
+    <p>To give your Dust &amp; Spurs order the best chance of arriving in time for Christmas, please place your order by the following dates:</p>
+    <ul>
+      <li><span>December 1</span> Fine Art Prints, Framed Fine Art Prints, Canvas Prints</li>
+      <li><span>December 12</span> Dust &amp; Spurs: Stories of the West Hardcover Photography Book</li>
+      <li><span>December 14</span> Fine Art Posters, Hanging Posters</li>
+    </ul>
+    <p class="cutoff-note">These deadlines apply to orders shipped within Canada using standard shipping. Delivery times are estimates and may vary depending on location, production requirements, and holiday shipping conditions. Christmas delivery cannot be guaranteed.</p>
+  </div>
+</div>
+</div>
+
+<section class="section home-gifts page-sec" id="homeGifts" data-page="home"><div class="wrap">
+  <div class="sec-head center"><span class="eyebrow">Gifts under $125</span><h2>Gifts within reach</h2></div>
+  <p class="lead-in">A few ways to give a piece of the West.</p>
+  <ul class="home-gift-list">
+    <li><a href="#/gifts">Along the Fence Line, standard poster, $49</a></li>
+    <li><a href="#/gifts">Hanging poster, $65</a></li>
+    <li><a href="#/gifts">Stories of the West book, $79</a></li>
+    <li><a href="#/gifts">Western Soul Journal, paperback, $15.22 on Amazon.ca (price set by Amazon, may change)</a></li>
+    <li><a href="#/gifts">eGift card, any amount</a></li>
+  </ul>
+  <a href="#/gifts" class="btn btn-solid">See the gifts</a>
+</div></section>
+
 <section class="section welcome page-sec" data-page="home">
   <div class="wrap">
     <div class="sec-head center"><span class="eyebrow">Welcome</span><h2>Welcome to Dust &amp; Spurs</h2></div>
@@ -497,12 +529,6 @@
     </div>
   </div>
 </section>
-
-<section class="section home-gifts page-sec" id="homeGifts" data-page="home"><div class="wrap">
-  <div class="sec-head center"><span class="eyebrow">Gifts under $125</span><h2>Gifts within reach</h2></div>
-  <p class="lead-in">Alix understands that a fine art print isn't within reach for everyone, so she made gifts that are more accessible. The complete collections aren't included here. To view them, <a href="#/collections">explore the Collections</a>.</p>
-  <a href="#/gifts" class="btn btn-solid">See the gifts</a>
-</div></section>
 
 <section class="section featured-works page-sec" data-page="home"><div class="wrap">
   <div class="sec-head center"><span class="eyebrow">From the collection</span><h2>Featured Works</h2>
@@ -720,18 +746,19 @@
   <div class="sec-head">
     <span class="eyebrow">Gift guide</span>
     <h2>Gifts from the West</h2>
-    <p class="note">A guide for October 30.</p>
+    <p class="note">Western gifts, chosen with care.</p>
   </div>
+  <div id="cutoffGiftsSlot"></div>
   <div class="gift-grid" id="giftGrid">
     <article class="gift-card">
       <figure class="gift-photo"><img src="assets/posters/along-the-fence-line.jpg" width="1536" height="1024" alt="Poster mockup of Along the Fence Line, Open Country." loading="lazy" decoding="async"></figure>
-      <h3>Along the Fence Line</h3>
+      <h3>Standard poster, Along the Fence Line</h3>
       <p class="gift-price">$49</p>
       <a class="btn btn-solid" href="#/posters/along-the-fence-line">See this poster</a>
     </article>
     <article class="gift-card">
       <figure class="gift-photo"><img src="assets/posters/kindred.jpg" width="1536" height="1024" alt="Kindred poster. Hangers are not pictured." loading="lazy" decoding="async"></figure>
-      <h3>Hanging poster</h3>
+      <h3>Hanging poster, Kindred</h3>
       <p class="gift-price">$65</p>
       <p class="gift-note">Hangers are not pictured.</p>
       <a class="btn btn-solid" href="#/posters/kindred/hanging">See this poster</a>
@@ -752,6 +779,7 @@
       <figure class="gift-photo"><img src="assets/gifts/egift-card.png" width="1500" height="1000" alt="Dust and Spurs gift card." loading="lazy" decoding="async"></figure>
       <h3>eGift card</h3>
       <p class="gift-price">Any amount</p>
+      <p class="gift-note">Short on time? An eGift card arrives by email.</p>
       <a class="btn btn-solid" href="https://app.squareup.com/gift/ML5W8MYW4D9NW/order" target="_blank" rel="noopener">Send an eGift card</a>
     </article>
   </div>
@@ -829,8 +857,9 @@
     <div class="cv-body">
       <label for="cName">Full name</label><input type="text" id="cName" autocomplete="name">
       <label for="cEmail">Email</label><input type="email" id="cEmail" autocomplete="email">
-      <label for="cPhone">Phone</label><input type="tel" id="cPhone" autocomplete="tel" inputmode="tel">
+      <label class="quiet" for="cPhone">Phone (optional, only used for delivery questions)</label><input type="tel" id="cPhone" autocomplete="tel" inputmode="tel">
       <label for="cAddr">Shipping address</label><input type="text" id="cAddr" autocomplete="address-line1">
+      <label for="cUnit">Apartment, suite, or unit</label><input type="text" id="cUnit" autocomplete="address-line2">
       <label for="cCity">City / town</label><input type="text" id="cCity" autocomplete="address-level2">
       <label for="cCountry">Country</label>
       <select id="cCountry" autocomplete="country" onchange="onCountry()"><option>Canada</option><option>United States</option></select>
@@ -872,7 +901,7 @@
     <div class="drawer-head"><h3>Shipping quote required</h3><button class="x" onclick="closeAll()" aria-label="Close">×</button></div>
     <div class="cv-body">
       <div class="cv-sum" id="quoteSummary"></div>
-      <p class="quote-msg">We'd be happy to ship your artwork to your location. Shipping to Quebec, Yukon, the Northwest Territories and the United States requires an individual quote. Submit your order details and we'll contact you with the final shipping cost before any payment is taken.</p>
+      <p class="quote-msg">We'd be happy to ship your artwork to your location. Shipping to Quebec, Yukon, the Northwest Territories, Nunavut, and the United States requires an individual quote. Submit your order details and we'll contact you with the final shipping cost before any payment is taken.</p>
     </div>
     <div class="drawer-foot">
       <button class="btn btn-solid" onclick="requestQuote()">Request Shipping Quote</button>
@@ -914,6 +943,7 @@
 
 <script src="/lib/hash-route.js"></script>
 <script src="/lib/analytics.js"></script>
+<script src="/lib/christmas-notice.js"></script>
 <script>
 /* Real GA4 measurement ID. The placeholder G-XXXXXXXXXX would send nothing. */
 const GA_MEASUREMENT_ID = 'G-NTS2KXFME7';
@@ -1102,7 +1132,19 @@ function closeModal(){
 }
 
 /* ---- cart ---- */
-let cart=[];
+const CART_KEY='ds-cart';
+function readCart(){
+  try{
+    const data=JSON.parse(localStorage.getItem(CART_KEY)||'[]');
+    if(!Array.isArray(data)) return [];
+    return data.filter(function(item){
+      return item && typeof item.key==='string' && typeof item.title==='string' && typeof item.price==='number' && item.qty>=1 && item.qty<=10;
+    }).slice(0,30);
+  }catch(e){ return []; }
+}
+function saveCart(){ try{ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }catch(e){} }
+let cart=readCart();
+function attrText(value){ return String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 const POSTERS=[
   {id:'against-the-light',title:'Against the Light',collection:'Ranch Life',image:'assets/posters/against-the-light.jpg'},
   {id:'along-the-fence-line',title:'Along the Fence Line',collection:'Open Country',image:'assets/posters/along-the-fence-line.jpg'},
@@ -1178,6 +1220,7 @@ function addToCart(){
   renderCart();closeModal();openCart();
 }
 function renderCart(){
+  saveCart();
   const box=document.getElementById('cartItems');
   document.getElementById('navCount').textContent=cart.reduce((a,c)=>a+c.qty,0);
   document.getElementById('checkoutBtn').disabled=cart.length===0;
@@ -1186,8 +1229,8 @@ function renderCart(){
     const src=c.image&&String(c.image).indexOf('img/prints/')===0?c.image.replace(/\.jpe?g$/i,'-400.jpg'):c.image;const thumb=c.image?`<img src="${src}" alt="" width="66" height="44" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">`:`<div class="g" style="background:${c.grad}"></div>`;
     return `<div class="ci"><div class="thumb">${thumb}</div>
       <div class="info"><div class="t">${c.title}</div><div class="s">${detailLine(c)}</div>
-      <div class="qty"><button onclick="chQty('${c.key}',-1)">−</button><span>${c.qty}</span><button onclick="chQty('${c.key}',1)">+</button></div>
-      <button class="rm" onclick="removeItem('${c.key}')">Remove</button></div>
+      <div class="qty"><button type="button" onclick="chQty('${c.key}',-1)" aria-label="Decrease quantity of ${attrText(c.title)}">−</button><span>${c.qty}</span><button type="button" onclick="chQty('${c.key}',1)" aria-label="Increase quantity of ${attrText(c.title)}">+</button></div>
+      <button type="button" class="rm" onclick="removeItem('${c.key}')" aria-label="Remove ${attrText(c.title)}">Remove</button></div>
       <div class="line">${money(c.price*c.qty)}</div></div>`;}).join('');
   document.getElementById('subtotal').textContent=money(cart.reduce((a,c)=>a+c.price*c.qty,0));
 }
@@ -1207,7 +1250,7 @@ function closeAll(){
 /* ---- checkout: two paths, standard Canadian and shipping-quote destinations ---- */
 const STORE = {
   email:'hello@dustandspurs.ca',
-  quoteProvinces:['Quebec','Yukon','Northwest Territories'],
+  quoteProvinces:['Quebec','Yukon','Northwest Territories','Nunavut'],
   quoteCountries:['United States'],
   tax:{inclusive:true, skPST:0.06, gstHstEnabled:false}   /* included in price; recorded server-side via Square */
 };
@@ -1251,6 +1294,7 @@ function continueFromShip(){
     email:document.getElementById('cEmail').value.trim(),
     phone:document.getElementById('cPhone').value.trim(),
     addr:document.getElementById('cAddr').value.trim(),
+    unit:document.getElementById('cUnit').value.trim(),
     city:document.getElementById('cCity').value.trim(),
     country:document.getElementById('cCountry').value,
     region: ca?document.getElementById('cProv').value:document.getElementById('cState').value.trim(),
@@ -1259,13 +1303,14 @@ function continueFromShip(){
   const miss=[];
   if(!ship.name)miss.push('name');
   if(!ship.email||!/.+@.+\..+/.test(ship.email))miss.push('a valid email');
-  if((ship.phone||'').replace(/\D/g,'').length<10)miss.push('phone number');
+  if(ship.phone && ship.phone.replace(/\D/g,'').length<10)miss.push('a phone number with at least 10 digits, or leave it blank');
   if(!ship.addr)miss.push('address');
   if(!ship.city)miss.push('city');
   if(!ship.region)miss.push(ca?'province/territory':'state');
   if(!ship.postal)miss.push(ca?'postal code':'ZIP code');
   if(miss.length){ document.getElementById('shipErr').textContent='Please add your '+miss.join(', ')+'.'; return; }
-  const shipto=`${ship.name}<br>${ship.addr}, ${ship.city}<br>${ship.region}, ${ship.country} ${ship.postal}<br>${ship.email}<br>${ship.phone}`;
+  const street=ship.unit?ship.addr+', '+ship.unit:ship.addr;
+  const shipto=`${ship.name}<br>${street}, ${ship.city}<br>${ship.region}, ${ship.country} ${ship.postal}<br>${ship.email}${ship.phone?'<br>'+ship.phone:''}`;
   if(needsQuote(ship.country, ship.region)){
     document.getElementById('quoteSummary').innerHTML=orderRows()+`<div class="shipto"><strong>Ship to</strong><br>${shipto}</div>`;
     showView('quote');
@@ -1310,6 +1355,7 @@ Name: ${ship.name}
 Email: ${ship.email}
 Phone: ${ship.phone}
 Address: ${ship.addr}
+Apartment, suite, or unit: ${ship.unit||''}
 City: ${ship.city}
 ${ship.country==='Canada'?'Province/Territory':'State'}: ${ship.region}
 Country: ${ship.country}
@@ -1325,8 +1371,7 @@ Please reply with the final shipping cost so a Square invoice can be sent.`;
   try{ const a=document.createElement("a");a.href=href;document.body.appendChild(a);a.click();a.remove(); }catch(e){}
   document.getElementById('doneHead').textContent='Quote requested';
   document.getElementById('doneTitle').textContent='Quote request ready to send';
-  document.getElementById('doneMsg').innerHTML=`Your email app should open with the request addressed to ${STORE.email}. Once Alix has it, she'll reply with the final shipping cost and a Square invoice. No payment is taken until you approve it. If your email app didn't open, write to <a href="mailto:${STORE.email}" style="color:var(--sage-deep)">${STORE.email}</a>.`;
-  cart=[];renderCart();
+  document.getElementById('doneMsg').innerHTML=`Your email app should open with the request addressed to ${STORE.email}. Your selection is still in the cart. Once Alix has the request, she'll reply with the final shipping cost and a Square invoice. No payment is taken until you approve it. If your email app didn't open, write to <a href="mailto:${STORE.email}" style="color:var(--sage-deep)">${STORE.email}</a>.`;
   showView('done');
 }
 addEventListener('keydown',e=>{
@@ -1340,6 +1385,40 @@ addEventListener('keydown',e=>{
   const active=document.activeElement;
   if(e.shiftKey && (active===first || active===modal || !modal.contains(active))){e.preventDefault();last.focus();}
   else if(!e.shiftKey && (active===last || active===modal || !modal.contains(active))){e.preventDefault();first.focus();}
+});
+const cutoffBanner=document.getElementById('cutoffBanner');
+const cutoffManuallyHidden=cutoffBanner.hasAttribute('hidden');
+let cutoffOpen=false;
+function syncCutoff(route){
+  const bar=document.getElementById('cutoffBar');
+  const toggle=document.getElementById('cutoffToggle');
+  const show=!cutoffManuallyHidden && christmasNoticeVisible(new Date());
+  if(!show || route==='thank-you'){
+    bar.hidden=true;
+    cutoffBanner.hidden=true;
+    return;
+  }
+  if(route==='home'){
+    document.getElementById('cutoffHomeSlot').appendChild(cutoffBanner);
+    bar.hidden=true;
+    cutoffBanner.hidden=false;
+    return;
+  }
+  if(route==='gifts'){
+    document.getElementById('cutoffGiftsSlot').appendChild(cutoffBanner);
+    bar.hidden=true;
+    cutoffBanner.hidden=false;
+    return;
+  }
+  document.getElementById('cutoffDock').appendChild(cutoffBanner);
+  bar.hidden=false;
+  cutoffBanner.hidden=!cutoffOpen;
+  toggle.setAttribute('aria-expanded', cutoffOpen?'true':'false');
+  toggle.textContent=cutoffOpen?'Hide dates':'Show dates';
+}
+document.getElementById('cutoffToggle').addEventListener('click', function(){
+  cutoffOpen=!cutoffOpen;
+  syncCutoff(activeRoute);
 });
 /* ---- page router. Query strings, including UTM tags, stay on the URL. ---- */
 const PAGES=['home','collections','about','prints','posters','book','journal','gifts','contact','thank-you'];
@@ -1357,7 +1436,8 @@ function navigate(r, historyMode){
   if(historyMode==='none' && shownUrl===here) return;
   activeRoute=r;
   document.querySelectorAll('.page-sec').forEach(s=>s.classList.toggle('active',s.dataset.page===r));
-  if(r==='thank-you'&&cart.length){cart=[];renderCart();}
+  if(r==='thank-you'){cart=[];renderCart();}
+  syncCutoff(r);
   document.querySelectorAll('#navlinks [data-route]').forEach(a=>a.classList.toggle('active',a.dataset.route===r));
   document.getElementById('navlinks').classList.remove('mob');
   const navToggle=document.getElementById('navToggle');
