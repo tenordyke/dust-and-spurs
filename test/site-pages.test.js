@@ -61,8 +61,17 @@ assert.ok(html.includes("navigate(routeFromHash(), 'replace')"));
 assert.ok(html.includes("navigate(routeFromHash(), 'none')"));
 assert.ok(html.includes("'gifts'"));
 
-assert.ok(html.includes('id="cutoffBanner" hidden'));
-assert.ok(html.includes('TODO-confirm: Holiday shipping cutoff.'));
+assert.ok(html.includes('id="cutoffBanner"'));
+assert.strictEqual(html.includes('id="cutoffBanner" hidden'), false);
+assert.strictEqual(html.includes('TODO-confirm: Holiday shipping cutoff.'), false);
+assert.ok(html.includes('Christmas 2026 Ordering Deadlines'));
+assert.ok(html.includes('Planning to give a little piece of the West this Christmas?'));
+assert.ok(html.includes('To give your Dust &amp; Spurs order the best chance of arriving in time for Christmas, please place your order by the following dates:'));
+assert.ok(html.includes('<span>December 1</span> Fine Art Prints, Framed Fine Art Prints, Canvas Prints'));
+assert.ok(html.includes('<span>December 12</span> Dust &amp; Spurs: Stories of the West Hardcover Photography Book'));
+assert.ok(html.includes('<span>December 14</span> Fine Art Posters, Hanging Posters'));
+assert.ok(html.includes('These deadlines apply to orders shipped within Canada using standard shipping. Delivery times are estimates and may vary depending on location, production requirements, and holiday shipping conditions. Christmas delivery cannot be guaranteed.'));
+assert.ok(html.includes('.cutoff[hidden]{display:none;}'));
 
 const forms = html.split('<form class="signup"').length - 1;
 assert.strictEqual(forms, 2);

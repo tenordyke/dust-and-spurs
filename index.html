@@ -399,9 +399,16 @@
     .journal-hero{max-width:440px;}
   }
   .contact p+p{margin-top:-14px;}
-  .cutoff{background:var(--sage-deep);color:var(--bone);text-align:center;padding:12px 20px;}
-  .cutoff p{margin:0;font-size:.95rem;}
+  .cutoff{background:var(--sage-deep);color:var(--bone);text-align:center;padding:clamp(22px,3.2vw,36px) 0;}
+  .cutoff p{margin:12px auto 0;max-width:64ch;font-size:.98rem;line-height:1.55;color:#e8e1d3e0;}
+  .cutoff .cutoff-title{font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:clamp(1.45rem,2.6vw,1.9rem);line-height:1.15;margin:0 auto;color:var(--bone);}
+  .cutoff .cutoff-intro{font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:1.08rem;color:var(--bone);margin-top:10px;}
+  .cutoff ul{list-style:none;margin:16px auto 0;padding:0;max-width:44rem;text-align:left;}
+  .cutoff li{display:grid;grid-template-columns:max-content 1fr;gap:4px 18px;align-items:baseline;border-top:1px solid #e8e1d333;padding:9px 0 0;margin-top:9px;font-size:.95rem;color:var(--bone);}
+  .cutoff li span{font-family:'Space Mono',monospace;font-size:.74rem;letter-spacing:.02em;color:var(--dust);white-space:nowrap;}
+  .cutoff .cutoff-note{margin-top:16px;font-size:.82rem;line-height:1.55;color:var(--dust);max-width:68ch;}
   .cutoff[hidden]{display:none;}
+  @media(max-width:560px){.cutoff li{grid-template-columns:1fr;gap:2px;}}
   .gift-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:8px;}
   .gift-card{background:var(--bone-2);border:1px solid #0000000d;box-shadow:var(--shadow);padding:12px;display:flex;flex-direction:column;gap:8px;}
   .gift-photo{margin:0;aspect-ratio:3/2;overflow:hidden;background:var(--dust);}
@@ -451,8 +458,19 @@
   </div>
   <button class="nav-toggle" id="navToggle" onclick="toggleNav()" aria-label="Menu" aria-expanded="false" aria-controls="navlinks">☰</button>
 </div></nav>
-<div class="cutoff" id="cutoffBanner" hidden>
-  <p>TODO-confirm: Holiday shipping cutoff. The last day to order for holiday delivery is not confirmed yet.</p>
+<!-- Christmas 2026 ordering notice. Add hidden to #cutoffBanner to hide it after the season. -->
+<div class="cutoff" id="cutoffBanner">
+  <div class="wrap">
+    <p class="cutoff-title">Christmas 2026 Ordering Deadlines</p>
+    <p class="cutoff-intro">Planning to give a little piece of the West this Christmas?</p>
+    <p>To give your Dust &amp; Spurs order the best chance of arriving in time for Christmas, please place your order by the following dates:</p>
+    <ul>
+      <li><span>December 1</span> Fine Art Prints, Framed Fine Art Prints, Canvas Prints</li>
+      <li><span>December 12</span> Dust &amp; Spurs: Stories of the West Hardcover Photography Book</li>
+      <li><span>December 14</span> Fine Art Posters, Hanging Posters</li>
+    </ul>
+    <p class="cutoff-note">These deadlines apply to orders shipped within Canada using standard shipping. Delivery times are estimates and may vary depending on location, production requirements, and holiday shipping conditions. Christmas delivery cannot be guaranteed.</p>
+  </div>
 </div>
 
 <header class="hero page-sec" id="top" data-page="home"><div class="wrap">
