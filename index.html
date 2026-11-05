@@ -418,6 +418,13 @@
   .cutoff-slim button{background:transparent;color:var(--bone);border:1px solid #e8e1d366;font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;padding:8px 12px;cursor:pointer;}
   .cutoff-slim button:hover{border-color:var(--bone);}
   .cutoff-slim[hidden]{display:none;}
+  .sale-slim{background:var(--sage-deep);color:var(--bone);text-align:center;border-bottom:1px solid #e8e1d333;}
+  .sale-slim .wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:48px;padding-top:10px;padding-bottom:10px;}
+  .sale-slim a{display:block;max-width:68ch;font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:1.02rem;line-height:1.35;color:var(--bone);text-decoration:underline;text-decoration-color:var(--dust);text-underline-offset:3px;}
+  .sale-slim a:hover{color:var(--dust-lt);}
+  .sale-slim .sale-note{margin:0;max-width:68ch;font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.02em;line-height:1.45;color:var(--dust);}
+  .sale-slim[hidden]{display:none;}
+  .sale-slim .sale-note[hidden]{display:none;}
   .gift-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:8px;}
   .gift-card{background:var(--bone-2);border:1px solid #0000000d;box-shadow:var(--shadow);padding:12px;display:flex;flex-direction:column;gap:8px;}
   .gift-photo{margin:0;aspect-ratio:3/2;overflow:hidden;background:var(--dust);}
@@ -467,6 +474,13 @@
   </div>
   <button class="nav-toggle" id="navToggle" onclick="toggleNav()" aria-label="Menu" aria-expanded="false" aria-controls="navlinks">☰</button>
 </div></nav>
+<!-- Holiday sale banner. Stays hidden until holidaySaleBannerEnabled is true in lib/sale-banner.js, after Square applies the automatic 10% shop discount. Add data-hold to keep it hidden even then. -->
+<div class="sale-slim" id="saleBanner" hidden>
+  <div class="wrap">
+    <a id="saleBannerLink" href="#/collections"></a>
+    <p class="sale-note" id="saleBannerNote" hidden></p>
+  </div>
+</div>
 <div class="cutoff-slim" id="cutoffBar" hidden>
   <div class="wrap">
     <p>Christmas order-by dates</p>
@@ -944,6 +958,7 @@
 <script src="/lib/hash-route.js"></script>
 <script src="/lib/analytics.js"></script>
 <script src="/lib/christmas-notice.js"></script>
+<script src="/lib/sale-banner.js"></script>
 <script>
 /* Real GA4 measurement ID. The placeholder G-XXXXXXXXXX would send nothing. */
 const GA_MEASUREMENT_ID = 'G-NTS2KXFME7';
@@ -1420,6 +1435,36 @@ document.getElementById('cutoffToggle').addEventListener('click', function(){
   cutoffOpen=!cutoffOpen;
   syncCutoff(activeRoute);
 });
+function syncSaleBanner(route){
+  const banner=document.getElementById('saleBanner');
+  const link=document.getElementById('saleBannerLink');
+  const note=document.getElementById('saleBannerNote');
+  const phase=holidaySaleBanner(new Date(), {
+    held: banner.hasAttribute('data-hold'),
+    route: route
+  });
+  if(!phase){
+    banner.hidden=true;
+    return;
+  }
+  link.textContent=phase.copy;
+  link.setAttribute('href', phase.href);
+  if(phase.external){
+    link.target='_blank';
+    link.rel='noopener';
+  }else{
+    link.removeAttribute('target');
+    link.removeAttribute('rel');
+  }
+  if(phase.note){
+    note.hidden=false;
+    note.textContent=phase.note;
+  }else{
+    note.hidden=true;
+    note.textContent='';
+  }
+  banner.hidden=false;
+}
 /* ---- page router. Query strings, including UTM tags, stay on the URL. ---- */
 const PAGES=['home','collections','about','prints','posters','book','journal','gifts','contact','thank-you'];
 let activeRoute='home', pendingGroup=null, shownUrl=null;
@@ -1438,6 +1483,7 @@ function navigate(r, historyMode){
   document.querySelectorAll('.page-sec').forEach(s=>s.classList.toggle('active',s.dataset.page===r));
   if(r==='thank-you'){cart=[];renderCart();}
   syncCutoff(r);
+  syncSaleBanner(r);
   document.querySelectorAll('#navlinks [data-route]').forEach(a=>a.classList.toggle('active',a.dataset.route===r));
   document.getElementById('navlinks').classList.remove('mob');
   const navToggle=document.getElementById('navToggle');

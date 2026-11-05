@@ -103,6 +103,14 @@ assert.ok(html.includes('<span>December 12</span> Dust &amp; Spurs: Stories of t
 assert.ok(html.includes('<span>December 14</span> Fine Art Posters, Hanging Posters'));
 assert.ok(html.includes('These deadlines apply to orders shipped within Canada using standard shipping. Delivery times are estimates and may vary depending on location, production requirements, and holiday shipping conditions. Christmas delivery cannot be guaranteed.'));
 assert.ok(html.includes('.cutoff[hidden]{display:none;}'));
+assert.ok(html.includes('id="saleBanner" hidden'));
+assert.ok(html.includes('id="saleBannerLink"'));
+assert.ok(html.includes('id="saleBannerNote"'));
+assert.ok(html.includes('src="/lib/sale-banner.js"'));
+assert.ok(html.includes('holidaySaleBanner(new Date()'));
+assert.ok(html.includes("banner.hasAttribute('data-hold')"));
+assert.ok(html.includes('syncSaleBanner(r)'));
+assert.ok(html.includes('.sale-slim[hidden]{display:none;}'));
 
 const forms = html.split('<form class="signup"').length - 1;
 assert.strictEqual(forms, 2);
