@@ -8,9 +8,23 @@
 //   STORE_EMAIL          – optional, defaults to hello@dustandspurs.ca
 //   TAX_PST_PCT          – optional, included Saskatchewan PST %, defaults to 6
 //   GST_ENABLED / GST_PCT – optional; set GST_ENABLED=true (and GST_PCT, default 5) once registered
+//   HOLIDAY_SALE_ENABLED – optional. Leave unset to follow lib/holiday-sale.js.
+//                          Set to false and redeploy to charge full price during the sale window.
 
 const crypto = require('crypto');
 const { normalizePhone } = require('../../lib/phone');
+const { holidaySaleQuote } = require('../../lib/holiday-sale');
+
+let nowOverride = null;
+function setCheckoutNow(fn) { nowOverride = fn; }
+function checkoutNow() {
+  if (typeof nowOverride === 'function') {
+    const value = nowOverride();
+    const when = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+    if (!Number.isNaN(when.getTime())) return when;
+  }
+  return new Date();
+}
 
 // ---- Trusted price list (must match the website). Prices are all-in CAD. ----
 const PRICE = {
@@ -148,6 +162,15 @@ exports.handler = async (event) => {
   if ((process.env.GST_ENABLED||'').toLowerCase() === 'true')
     taxes.push({ uid:'gst', name:'GST (included in price)', percentage: String(process.env.GST_PCT || '5'), scope:'ORDER', type:'INCLUSIVE' });
 
+  // The discount comes off the tax-inclusive total. Square then treats the
+  // included tax as a portion of the discounted amount, so the customer pays
+  // list minus the discount, not list minus the discount plus tax again.
+  // A fixed cent amount keeps the safety check exact. Square infers the
+  // discount type from amount_money.
+  const listCents = Math.round(total * 100);
+  const sale = holidaySaleQuote(listCents, checkoutNow(), process.env);
+  const expectedCents = sale ? sale.chargeCents : listCents;
+
   const siteUrl = (process.env.SITE_URL || `https://${event.headers.host}`).replace(/\/$/, '');
   const nameParts = clean(ship.name).split(/\s+/);
   const reference = 'DS-' + Date.now().toString(36).toUpperCase();
@@ -159,6 +182,12 @@ exports.handler = async (event) => {
       reference_id: reference,
       line_items,
       taxes,
+      ...(sale ? { discounts: [{
+        uid: 'black-friday',
+        name: sale.name,
+        scope: 'ORDER',
+        amount_money: { amount: sale.discountCents, currency: 'CAD' },
+      }] } : {}),
       metadata: {
         ship_to_name: clean(ship.name, 255),
         ship_to: clean(`${unit ? clean(ship.addr) + ', ' + unit : clean(ship.addr)}, ${ship.city}, ${ship.region}, ${ship.country} ${ship.postal}`, 255),
@@ -166,6 +195,7 @@ exports.handler = async (event) => {
         ...(phoneText ? { customer_phone: phoneText } : {}),
         ...(unit ? { ship_unit: unit } : {}),
         source: 'dustandspurs.ca website',
+        ...(sale ? { sale: sale.name, sale_discount_cents: String(sale.discountCents) } : {}),
       },
     },
     checkout_options: {
@@ -205,9 +235,11 @@ exports.handler = async (event) => {
   }
   const squareOrder = data.related_resources && data.related_resources.orders && data.related_resources.orders[0];
   const charged = squareOrder && squareOrder.total_money && Number(squareOrder.total_money.amount);
-  if (Number.isFinite(charged) && charged !== total * 100) {
-    console.error('Square total did not match the site price', JSON.stringify({ charged, expected: total * 100, total_tax_money: squareOrder.total_tax_money, taxes: squareOrder.taxes }));
+  if (Number.isFinite(charged) && charged !== expectedCents) {
+    console.error('Square total did not match the site price', JSON.stringify({ charged, expected: expectedCents, sale: sale || null, total_tax_money: squareOrder.total_tax_money, taxes: squareOrder.taxes }));
     return json(502, {error: 'Checkout total did not match the price on the site. Please email hello@dustandspurs.ca to complete your order.'});
   }
-  return json(200, { url: data.payment_link.url, orderId: data.payment_link.order_id, reference, total });
+  return json(200, { url: data.payment_link.url, orderId: data.payment_link.order_id, reference, total: expectedCents / 100 });
 };
+
+exports.setCheckoutNow = setCheckoutNow;

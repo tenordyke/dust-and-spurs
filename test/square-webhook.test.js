@@ -11,6 +11,7 @@ const ENV_KEYS = [
   'SQUARE_WEBHOOK_SIGNATURE_KEY', 'SQUARE_WEBHOOK_NOTIFICATION_URL', 'SQUARE_ACCESS_TOKEN',
   'SQUARE_ENV', 'SQUARE_LOCATION_ID', 'SQUARE_VERSION', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER',
   'SMTP_PASS', 'SMTP_FROM', 'RESEND_API_KEY', 'RESEND_FROM', 'ORDER_ALERT_EMAIL', 'SITE_URL',
+  'HOLIDAY_SALE_ENABLED', 'GST_ENABLED', 'GST_PCT', 'TAX_PST_PCT',
 ];
 
 function sign(url, body, key) {
@@ -293,6 +294,7 @@ async function main() {
     ].forEach((part) => assert.ok(text.includes(part), 'missing: ' + part));
     assert.strictEqual(text.includes('\u2014'), false);
     assert.strictEqual(text.includes('\u2013'), false);
+    assert.strictEqual(text.includes('Black Friday'), false);
     assert.strictEqual(alert.replyTo, 'buyer@example.com');
     const poisoned = sampleOrder();
     poisoned.fulfillments[0].shipment_details.recipient.email_address = 'buyer@example.com\r\nBcc: other@example.com';
@@ -488,6 +490,7 @@ async function main() {
 
   await test('checkout prefills Square shipping and treats phone as optional', async () => {
     const restore = useEnv({ SITE_URL: 'https://dustandspurs.ca' });
+    checkout.setCheckoutNow(function () { return new Date('2026-11-20T18:00:00.000Z'); });
     const original = global.fetch;
     let captured = null;
     global.fetch = async (url, opts) => {
@@ -561,9 +564,12 @@ async function main() {
       assert.strictEqual(captured.order.metadata.customer_phone, '(306) 555-0199');
       assert.strictEqual(captured.order.metadata.source, 'dustandspurs.ca website');
       assert.strictEqual(captured.order.taxes[0].type, 'INCLUSIVE');
+      assert.strictEqual(captured.order.discounts, undefined);
+      assert.strictEqual(captured.order.metadata.sale, undefined);
       assert.strictEqual(captured.order.line_items[0].base_price_money.amount, 12500);
       assert.ok(captured.order.reference_id.startsWith('DS-'));
     } finally {
+      checkout.setCheckoutNow(null);
       global.fetch = original;
       restore();
     }
@@ -631,6 +637,7 @@ async function main() {
 
   await test('posters and the photo book keep inclusive tax and print prices', async () => {
     const restore = useEnv({ SITE_URL: 'https://dustandspurs.ca' });
+    checkout.setCheckoutNow(function () { return new Date('2026-11-20T18:00:00.000Z'); });
     const original = global.fetch;
     let squareTotal = 26900;
     let captured = null;
@@ -730,7 +737,9 @@ async function main() {
       assert.strictEqual(framedOk.statusCode, 200);
       assert.strictEqual(captured.order.line_items[0].base_price_money.amount, 52500);
       assert.strictEqual(captured.order.line_items[0].variation_name, 'Framed Print · 12 × 18" · Walnut frame');
+      assert.strictEqual(captured.order.discounts, undefined);
     } finally {
+      checkout.setCheckoutNow(null);
       global.fetch = original;
       restore();
     }

@@ -1,7 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { holidaySaleBanner, holidaySaleBannerEnabled } = require('../lib/sale-banner');
+const { holidaySaleBanner } = require('../lib/sale-banner');
 
 const preview = '10% off the shop, November 27 to 30. Order fine art by December 1 for Christmas.';
 const sale = '10% off everything in the shop through Monday, November 30. Applied at checkout. Gift cards excluded.';
@@ -26,7 +26,7 @@ function atRegina(stamp, endOfDay) {
 
 function shown(stamp, extra) {
   const endOfDay = extra && extra.endOfDay;
-  const options = Object.assign({ enabled: true }, extra || {});
+  const options = Object.assign({}, extra || {});
   delete options.endOfDay;
   return holidaySaleBanner(atRegina(stamp, endOfDay), options);
 }
@@ -39,9 +39,10 @@ function assertQuiet(phase) {
   assert.strictEqual(text.includes('Western Soul'), false);
 }
 
-assert.strictEqual(holidaySaleBannerEnabled, false);
-assert.strictEqual(holidaySaleBanner(atRegina('2026-11-27')), null);
-assert.strictEqual(shown('2026-11-27', { enabled: false }), null);
+assert.strictEqual(holidaySaleBanner(atRegina('2026-11-27')).copy, sale);
+assert.strictEqual(shown('2026-11-27', { env: { HOLIDAY_SALE_ENABLED: 'false' } }), null);
+assert.strictEqual(shown('2026-11-20', { env: { HOLIDAY_SALE_ENABLED: 'false' } }), null);
+assert.strictEqual(shown('2026-12-01', { env: { HOLIDAY_SALE_ENABLED: 'false' } }).copy, fineArt);
 assert.strictEqual(shown('2026-11-27', { held: true }), null);
 assert.strictEqual(shown('2026-11-27', { route: 'thank-you' }), null);
 assert.strictEqual(holidaySaleBanner(new Date('not-a-date'), { enabled: true }), null);
@@ -97,8 +98,13 @@ assert.strictEqual(shown('2026-12-25', { endOfDay: true }).copy, egift);
 assert.strictEqual(shown('2026-12-26'), null);
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'lib', 'sale-banner.js'), 'utf8');
+const saleSource = fs.readFileSync(path.join(__dirname, '..', 'lib', 'holiday-sale.js'), 'utf8');
 assert.strictEqual(source.includes('\u2014'), false);
-assert.ok(source.includes('holidaySaleBannerEnabled = false'));
-assert.ok(source.includes('America/Regina'));
+assert.strictEqual(saleSource.includes('\u2014'), false);
+assert.strictEqual(source.includes('holidaySaleBannerEnabled'), false);
+assert.ok(saleSource.includes('America/Regina'));
+assert.ok(saleSource.includes('enabled: true'));
+assert.ok(saleSource.includes("start: '2026-11-27'"));
+assert.ok(saleSource.includes("end: '2026-11-30'"));
 
 console.log('sale banner tests passed');
