@@ -30,7 +30,7 @@ STEP 2: Add the values to Netlify
    SQUARE_ACCESS_TOKEN   = (the access token)
    SQUARE_LOCATION_ID    = (the location ID)
    SQUARE_ENV            = sandbox        (change to  production  when going live)
-   SITE_URL              = https://YOUR-SITE-NAME.netlify.app   (the live site address, used to send customers back after paying)
+   SITE_URL              = https://dustandspurs.ca   (where Square sends customers back after paying)
 
    Optional:
    STORE_EMAIL           = hello@dustandspurs.ca
@@ -97,7 +97,7 @@ Day-to-day
 - Refunds, order status and receipts are all handled inside Square.
 - If prices or sizes change, update them in BOTH index.html and
   netlify/functions/checkout.js (the function re-checks every price for safety).
-- When the custom domain dustandspurs.ca is connected, update SITE_URL and redeploy.
+- SITE_URL should be https://dustandspurs.ca. Checkout ignores a *.netlify.app value and sends buyers back to dustandspurs.ca anyway.
 
 ---------------------------------------------------------------------
 Paid order alert (email to hello@dustandspurs.ca)
