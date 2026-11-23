@@ -191,6 +191,31 @@ function addressLines(recipient, payment, meta) {
   return lines.length ? lines : ((meta && meta.ship_to) ? [meta.ship_to] : []);
 }
 
+function discountLines(order) {
+  const rows = [];
+  const list = order && Array.isArray(order.discounts) ? order.discounts : [];
+  list.forEach((discount) => {
+    if (!discount) return;
+    const applied = discount.applied_money && Number(discount.applied_money.amount);
+    const fixed = discount.amount_money && Number(discount.amount_money.amount);
+    const amount = Number.isFinite(applied) ? applied : (Number.isFinite(fixed) ? fixed : null);
+    const name = String(discount.name || 'Discount').replace(/[\r\n\t]/g, ' ').trim();
+    if (!name) return;
+    if (amount == null || amount === 0) rows.push(name);
+    else rows.push(name + ': -' + moneyCAD(Math.abs(amount)));
+  });
+  if (rows.length) return rows;
+  const meta = (order && order.metadata) || {};
+  const metaName = String(meta.sale || '').replace(/[\r\n\t]/g, ' ').trim();
+  const metaCents = Number(meta.sale_discount_cents);
+  if (metaName && Number.isFinite(metaCents) && metaCents > 0) {
+    return [metaName + ': -' + moneyCAD(metaCents)];
+  }
+  const totalOff = Number(order && order.total_discount_money && order.total_discount_money.amount);
+  if (Number.isFinite(totalOff) && totalOff > 0) return ['Discount: -' + moneyCAD(totalOff)];
+  return [];
+}
+
 function buildAlert({ order, payment }) {
   const meta = (order && order.metadata) || {};
   const recipient = shipmentRecipient(order);
@@ -228,6 +253,12 @@ function buildAlert({ order, payment }) {
     if (item.note) lines.push('Note: ' + item.note);
     if (!item.parsed && item.variation) lines.push('Variation: ' + item.variation);
   });
+
+  const discounts = discountLines(order);
+  if (discounts.length) {
+    lines.push('', 'Discount already included in the total');
+    discounts.forEach((row) => lines.push(row));
+  }
 
   lines.push(
     '',

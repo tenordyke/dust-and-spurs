@@ -226,6 +226,10 @@
   .ci .rm:hover{color:var(--clay);}
   .drawer-foot{padding:22px 26px;border-top:1px solid var(--dust);}
   .subtotal{display:flex;justify-content:space-between;font-family:'Fraunces';font-size:1.15rem;margin-bottom:6px;}
+  .subtotal[hidden],.sale-off[hidden],.ship-note[hidden]{display:none;}
+  .sale-off{margin-bottom:8px;}
+  .sale-off-line{font-size:.98rem;color:var(--ink-mut);}
+  .sale-off .ship-note{margin-bottom:0;}
   .ship-note{font-size:.78rem;color:var(--ink-mut);margin-bottom:16px;}
   .drawer-foot .btn{width:100%;justify-content:center;}
 
@@ -418,6 +422,13 @@
   .cutoff-slim button{background:transparent;color:var(--bone);border:1px solid #e8e1d366;font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;padding:8px 12px;cursor:pointer;}
   .cutoff-slim button:hover{border-color:var(--bone);}
   .cutoff-slim[hidden]{display:none;}
+  .sale-slim{background:var(--sage-deep);color:var(--bone);text-align:center;border-bottom:1px solid #e8e1d333;}
+  .sale-slim .wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:48px;padding-top:10px;padding-bottom:10px;}
+  .sale-slim a{display:block;max-width:68ch;font-family:'Fraunces',Georgia,serif;font-style:italic;font-size:1.02rem;line-height:1.35;color:var(--bone);text-decoration:underline;text-decoration-color:var(--dust);text-underline-offset:3px;}
+  .sale-slim a:hover{color:var(--dust-lt);}
+  .sale-slim .sale-note{margin:0;max-width:68ch;font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.02em;line-height:1.45;color:var(--dust);}
+  .sale-slim[hidden]{display:none;}
+  .sale-slim .sale-note[hidden]{display:none;}
   .gift-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:8px;}
   .gift-card{background:var(--bone-2);border:1px solid #0000000d;box-shadow:var(--shadow);padding:12px;display:flex;flex-direction:column;gap:8px;}
   .gift-photo{margin:0;aspect-ratio:3/2;overflow:hidden;background:var(--dust);}
@@ -467,6 +478,13 @@
   </div>
   <button class="nav-toggle" id="navToggle" onclick="toggleNav()" aria-label="Menu" aria-expanded="false" aria-controls="navlinks">☰</button>
 </div></nav>
+<!-- Holiday sale banner. Shows the phase for today's America/Regina date. Add data-hold to keep it hidden. -->
+<div class="sale-slim" id="saleBanner" hidden>
+  <div class="wrap">
+    <a id="saleBannerLink" href="#/collections"></a>
+    <p class="sale-note" id="saleBannerNote" hidden></p>
+  </div>
+</div>
 <div class="cutoff-slim" id="cutoffBar" hidden>
   <div class="wrap">
     <p>Christmas order-by dates</p>
@@ -846,6 +864,11 @@
     <div class="cart-items" id="cartItems"><div class="empty">Nothing selected yet.</div></div>
     <div class="drawer-foot">
       <div class="subtotal"><span>Subtotal (CAD)</span><span id="subtotal">$0</span></div>
+      <div class="sale-off" id="saleOff" hidden>
+        <div class="subtotal sale-off-line"><span id="saleOffLabel">Black Friday 10% off</span><span id="saleOffAmount"></span></div>
+        <div class="subtotal"><span>Total at checkout (CAD)</span><span id="saleOffTotal"></span></div>
+        <p class="ship-note">10% off is applied at checkout.</p>
+      </div>
       <div class="ship-note">Prices are in CAD and include applicable taxes and standard shipping within eligible Canadian destinations.</div>
       <button class="btn btn-solid" onclick="goCheckout()" id="checkoutBtn" disabled>Continue to checkout</button>
     </div>
@@ -887,7 +910,12 @@
     <div class="drawer-head"><h3>Review &amp; pay</h3><button class="x" onclick="closeAll()" aria-label="Close">×</button></div>
     <div class="cv-body">
       <div class="cv-sum" id="paySummary"></div>
-      <div class="subtotal" style="margin-top:18px"><span>Total (CAD)</span><span id="payTotal">$0</span></div>
+      <div id="payTotals" style="margin-top:18px">
+        <div class="subtotal" id="payListRow" hidden><span>Listed total (CAD)</span><span id="payList">$0</span></div>
+        <div class="subtotal sale-off-line" id="paySaleRow" hidden><span id="paySaleLabel">Black Friday 10% off</span><span id="paySaleAmount"></span></div>
+        <div class="subtotal"><span>Total (CAD)</span><span id="payTotal">$0</span></div>
+        <p class="ship-note" id="paySaleNote" hidden>10% off is applied at checkout.</p>
+      </div>
       <div class="ship-note">Includes applicable taxes and standard shipping to your Canadian address.</div>
     </div>
     <div class="drawer-foot">
@@ -944,6 +972,8 @@
 <script src="/lib/hash-route.js"></script>
 <script src="/lib/analytics.js"></script>
 <script src="/lib/christmas-notice.js"></script>
+<script src="/lib/holiday-sale.js"></script>
+<script src="/lib/sale-banner.js"></script>
 <script>
 /* Real GA4 measurement ID. The placeholder G-XXXXXXXXXX would send nothing. */
 const GA_MEASUREMENT_ID = 'G-NTS2KXFME7';
@@ -968,6 +998,46 @@ const avail = (tier,f) => (TIERS[tier].products[f]||[]).filter(s=>PRICE[f]&&PRIC
 const formats = tier => Object.keys(TIERS[tier].products).filter(f=>avail(tier,f).length);
 const sizeLabel = k => k.replace('x',' × ') + '"';
 const money = n => '$' + n.toLocaleString();
+function moneyCents(cents){
+  const abs=Math.abs(Math.round(cents));
+  const dollars=String(Math.floor(abs/100)).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  const rem=String(abs%100).padStart(2,'0');
+  return (cents<0?'-$':'$')+dollars+'.'+rem;
+}
+function cartListCents(){
+  return Math.round(cart.reduce((a,c)=>a+c.price*c.qty,0)*100);
+}
+function currentSale(){
+  if(!cart.length || typeof holidaySaleQuote!=='function') return null;
+  return holidaySaleQuote(cartListCents(), new Date());
+}
+function renderSaleFoot(){
+  const row=document.getElementById('saleOff');
+  const sale=currentSale();
+  if(!row) return sale;
+  row.hidden=!sale;
+  if(!sale) return null;
+  document.getElementById('saleOffLabel').textContent=sale.name;
+  document.getElementById('saleOffAmount').textContent='-'+moneyCents(sale.discountCents);
+  document.getElementById('saleOffTotal').textContent=moneyCents(sale.chargeCents);
+  return sale;
+}
+function renderPayTotal(){
+  const cents=cartListCents();
+  const sale=currentSale();
+  document.getElementById('payListRow').hidden=!sale;
+  document.getElementById('paySaleRow').hidden=!sale;
+  document.getElementById('paySaleNote').hidden=!sale;
+  if(!sale){
+    document.getElementById('payTotal').textContent=money(cents/100);
+    return null;
+  }
+  document.getElementById('payList').textContent=moneyCents(cents);
+  document.getElementById('paySaleLabel').textContent=sale.name;
+  document.getElementById('paySaleAmount').textContent='-'+moneyCents(sale.discountCents);
+  document.getElementById('payTotal').textContent=moneyCents(sale.chargeCents);
+  return sale;
+}
 function minPrice(tier){
   const t=TIERS[tier];let m=Infinity;
   for(const p in t.products) avail(tier,p).forEach(s=>m=Math.min(m,PRICE[p][s]));
@@ -1224,7 +1294,7 @@ function renderCart(){
   const box=document.getElementById('cartItems');
   document.getElementById('navCount').textContent=cart.reduce((a,c)=>a+c.qty,0);
   document.getElementById('checkoutBtn').disabled=cart.length===0;
-  if(!cart.length){box.innerHTML='<div class="empty">Nothing selected yet.</div>';document.getElementById('subtotal').textContent='$0';return;}
+  if(!cart.length){box.innerHTML='<div class="empty">Nothing selected yet.</div>';document.getElementById('subtotal').textContent='$0';renderSaleFoot();return;}
   box.innerHTML=cart.map(c=>{
     const src=c.image&&String(c.image).indexOf('img/prints/')===0?c.image.replace(/\.jpe?g$/i,'-400.jpg'):c.image;const thumb=c.image?`<img src="${src}" alt="" width="66" height="44" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;">`:`<div class="g" style="background:${c.grad}"></div>`;
     return `<div class="ci"><div class="thumb">${thumb}</div>
@@ -1233,6 +1303,7 @@ function renderCart(){
       <button type="button" class="rm" onclick="removeItem('${c.key}')" aria-label="Remove ${attrText(c.title)}">Remove</button></div>
       <div class="line">${money(c.price*c.qty)}</div></div>`;}).join('');
   document.getElementById('subtotal').textContent=money(cart.reduce((a,c)=>a+c.price*c.qty,0));
+  renderSaleFoot();
 }
 function chQty(k,d){const i=cart.find(c=>c.key===k);if(!i)return;i.qty+=d;if(i.qty<1)cart=cart.filter(c=>c.key!==k);renderCart();}
 function removeItem(k){cart=cart.filter(c=>c.key!==k);renderCart();}
@@ -1311,18 +1382,21 @@ function continueFromShip(){
   if(miss.length){ document.getElementById('shipErr').textContent='Please add your '+miss.join(', ')+'.'; return; }
   const street=ship.unit?ship.addr+', '+ship.unit:ship.addr;
   const shipto=`${ship.name}<br>${street}, ${ship.city}<br>${ship.region}, ${ship.country} ${ship.postal}<br>${ship.email}${ship.phone?'<br>'+ship.phone:''}`;
+  const sale=currentSale();
+  const quoteNote=sale?`<p class="ship-note">Black Friday: 10% off the listed item total is included on the invoice. Shipping is quoted separately.</p>`:'';
   if(needsQuote(ship.country, ship.region)){
-    document.getElementById('quoteSummary').innerHTML=orderRows()+`<div class="shipto"><strong>Ship to</strong><br>${shipto}</div>`;
+    document.getElementById('quoteSummary').innerHTML=orderRows()+`<div class="shipto"><strong>Ship to</strong><br>${shipto}</div>`+quoteNote;
     showView('quote');
   } else {
     document.getElementById('paySummary').innerHTML=orderRows()+`<div class="shipto"><strong>Ship to</strong><br>${shipto}</div>`;
-    document.getElementById('payTotal').textContent=money(cart.reduce((a,c)=>a+c.price*c.qty,0));
+    renderPayTotal();
     showView('pay');
   }
 }
 async function payNow(){
   const btn=document.querySelector('#cart [data-view="pay"] .btn-solid');
-  const total=money(cart.reduce((a,c)=>a+c.price*c.qty,0));
+  const sale=currentSale();
+  const total=sale?moneyCents(sale.chargeCents):money(cart.reduce((a,c)=>a+c.price*c.qty,0));
   btn.disabled=true; btn.textContent='Opening secure checkout…';
   try{
     const r=await fetch('/.netlify/functions/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1341,7 +1415,12 @@ async function payNow(){
   }finally{ btn.disabled=false; btn.textContent='Pay with Square'; }
 }
 function requestQuote(){
-  const total=money(cart.reduce((a,c)=>a+c.price*c.qty,0));
+  const cents=cartListCents();
+  const sale=currentSale();
+  const total=money(cents/100);
+  const saleNote=sale
+    ? `\nBlack Friday 10% off the listed item total: -${moneyCents(sale.discountCents)}. Item total after the discount: ${moneyCents(sale.chargeCents)}. Please include that discount on the invoice. Shipping is still quoted separately.`
+    : '';
   const lines=cart.map(c=>{
     const extra=(c.displayLabel?', '+c.displayLabel:'')+(c.frame?', '+framePhrase(c.frame):'');
     const sep=' · ';
@@ -1364,7 +1443,7 @@ ${ship.country==='Canada'?'Postal code':'ZIP code'}: ${ship.postal}
 Order
 ${lines}
 
-Listed CAD total (before shipping): ${total}
+Listed CAD total (before shipping): ${total}${saleNote}
 
 Please reply with the final shipping cost so a Square invoice can be sent.`;
   const href='mailto:'+STORE.email+'?subject='+encodeURIComponent('New Dust & Spurs Shipping Quote Request')+'&body='+encodeURIComponent(body);
@@ -1420,6 +1499,36 @@ document.getElementById('cutoffToggle').addEventListener('click', function(){
   cutoffOpen=!cutoffOpen;
   syncCutoff(activeRoute);
 });
+function syncSaleBanner(route){
+  const banner=document.getElementById('saleBanner');
+  const link=document.getElementById('saleBannerLink');
+  const note=document.getElementById('saleBannerNote');
+  const phase=holidaySaleBanner(new Date(), {
+    held: banner.hasAttribute('data-hold'),
+    route: route
+  });
+  if(!phase){
+    banner.hidden=true;
+    return;
+  }
+  link.textContent=phase.copy;
+  link.setAttribute('href', phase.href);
+  if(phase.external){
+    link.target='_blank';
+    link.rel='noopener';
+  }else{
+    link.removeAttribute('target');
+    link.removeAttribute('rel');
+  }
+  if(phase.note){
+    note.hidden=false;
+    note.textContent=phase.note;
+  }else{
+    note.hidden=true;
+    note.textContent='';
+  }
+  banner.hidden=false;
+}
 /* ---- page router. Query strings, including UTM tags, stay on the URL. ---- */
 const PAGES=['home','collections','about','prints','posters','book','journal','gifts','contact','thank-you'];
 let activeRoute='home', pendingGroup=null, shownUrl=null;
@@ -1438,6 +1547,7 @@ function navigate(r, historyMode){
   document.querySelectorAll('.page-sec').forEach(s=>s.classList.toggle('active',s.dataset.page===r));
   if(r==='thank-you'){cart=[];renderCart();}
   syncCutoff(r);
+  syncSaleBanner(r);
   document.querySelectorAll('#navlinks [data-route]').forEach(a=>a.classList.toggle('active',a.dataset.route===r));
   document.getElementById('navlinks').classList.remove('mob');
   const navToggle=document.getElementById('navToggle');

@@ -36,6 +36,13 @@ STEP 2: Add the values to Netlify
    STORE_EMAIL           = hello@dustandspurs.ca
    TAX_PST_PCT           = 6              (included Saskatchewan PST, recorded on each Square order)
    GST_ENABLED           = false          (set to true, with GST_PCT = 5, once registered for GST)
+   HOLIDAY_SALE_ENABLED  = false          (optional emergency brake. Leave unset.
+                                           Checkout already takes 10% off from
+                                           November 27 through November 30, 2026,
+                                           Saskatchewan time. Set this to false
+                                           and redeploy to charge full price.
+                                           The banner still follows lib/holiday-sale.js
+                                           until `enabled` there is set to false.)
 
 2. IMPORTANT: add the variables BEFORE deploying. A deploy picks them up.
    If you change them later, redeploy (Deploys -> Trigger deploy -> Deploy site).
@@ -78,11 +85,15 @@ Day-to-day
 - New paid orders appear in Square Dashboard -> Orders, with the photograph
   title, format, size, collection, quantity, price and the shipping address.
   Turn on order notifications in Square (Account & Settings -> Notifications).
-- Each order records the included PST separately for bookkeeping; the customer
-  pays exactly the price shown on the site.
+- Each order records the included PST separately for bookkeeping. The customer
+  pays the price shown at checkout. From November 27 through November 30, 2026
+  (Saskatchewan time), that price is 10% below the listed price. The cart says so.
+  Gift cards are not in this checkout. Set HOLIDAY_SALE_ENABLED to false and
+  redeploy if the discount has to stop.
 - Quebec / Yukon / NWT / US customers never reach payment: the site emails a
   shipping-quote request to hello@dustandspurs.ca and Alix replies with a
-  Square invoice.
+  Square invoice. During November 27 to 30, 2026 that request names the 10%
+  discount so it can be included on the invoice.
 - Refunds, order status and receipts are all handled inside Square.
 - If prices or sizes change, update them in BOTH index.html and
   netlify/functions/checkout.js (the function re-checks every price for safety).
