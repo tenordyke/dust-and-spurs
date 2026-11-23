@@ -4,7 +4,7 @@
 //   SQUARE_ACCESS_TOKEN  – from developer.squareup.com (Production access token)
 //   SQUARE_LOCATION_ID   – from developer.squareup.com → Locations
 //   SQUARE_ENV           – "production" (default) or "sandbox" for testing
-//   SITE_URL             – e.g. https://dust-and-spurs.netlify.app (where Square sends customers back)
+//   SITE_URL             - https://dustandspurs.ca (where Square sends customers back). A *.netlify.app value is ignored.
 //   STORE_EMAIL          – optional, defaults to hello@dustandspurs.ca
 //   TAX_PST_PCT          – optional, included Saskatchewan PST %, defaults to 6
 //   GST_ENABLED / GST_PCT – optional; set GST_ENABLED=true (and GST_PCT, default 5) once registered
@@ -24,6 +24,25 @@ function checkoutNow() {
     if (!Number.isNaN(when.getTime())) return when;
   }
   return new Date();
+}
+
+const CANONICAL_SITE_URL = 'https://dustandspurs.ca';
+
+function checkoutSiteUrl(rawSiteUrl) {
+  const trimmed = String(rawSiteUrl == null ? '' : rawSiteUrl).trim().replace(/\/$/, '');
+  if (!trimmed) return CANONICAL_SITE_URL;
+  let parsed;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return CANONICAL_SITE_URL;
+  }
+  const host = String(parsed.hostname || '').toLowerCase();
+  if (parsed.protocol !== 'https:' || !host || host === 'netlify.app' || host.endsWith('.netlify.app')) {
+    return CANONICAL_SITE_URL;
+  }
+  if (host === 'dustandspurs.ca' || host === 'www.dustandspurs.ca') return CANONICAL_SITE_URL;
+  return 'https://' + host;
 }
 
 // ---- Trusted price list (must match the website). Prices are all-in CAD. ----
@@ -171,7 +190,7 @@ exports.handler = async (event) => {
   const sale = holidaySaleQuote(listCents, checkoutNow(), process.env);
   const expectedCents = sale ? sale.chargeCents : listCents;
 
-  const siteUrl = (process.env.SITE_URL || `https://${event.headers.host}`).replace(/\/$/, '');
+  const siteUrl = checkoutSiteUrl(process.env.SITE_URL);
   const nameParts = clean(ship.name).split(/\s+/);
   const reference = 'DS-' + Date.now().toString(36).toUpperCase();
 
@@ -243,3 +262,5 @@ exports.handler = async (event) => {
 };
 
 exports.setCheckoutNow = setCheckoutNow;
+exports.CANONICAL_SITE_URL = CANONICAL_SITE_URL;
+exports.checkoutSiteUrl = checkoutSiteUrl;
